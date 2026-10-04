@@ -210,4 +210,3 @@ This is an **AI-assisted portfolio project** demonstrating inspectable control l
 | `frontend/tests/` | Browser workflows and responsive checks |
 | `scripts/` | Local preview and database helpers |
 | `docs/` | Architecture, verification notes and screenshots |
-
