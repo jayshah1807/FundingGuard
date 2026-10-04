@@ -1,0 +1,13 @@
+{
+  "name": "fundingguard-local-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:preview": "node scripts/preview-db.mjs",
+    "db:test": "node scripts/preview-db.mjs --test",
+    "preview": "node scripts/preview.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite-socket": "0.2.11"
+  }
+}

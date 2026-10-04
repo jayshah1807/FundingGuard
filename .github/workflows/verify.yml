@@ -1,0 +1,58 @@
+name: Verify FundingGuard
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - run: npm ci
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - name: Test against disposable PGlite
+        shell: bash
+        run: |
+          mkdir -p .runtime
+          node scripts/preview-db.mjs --test > .runtime/test-database.log 2>&1 &
+          DB_PID=$!
+          trap 'kill "$DB_PID" 2>/dev/null || true' EXIT
+          node --input-type=module <<'JS'
+          import { createConnection } from 'node:net';
+          const ready = () => new Promise(resolve => {
+            const socket = createConnection({host: '127.0.0.1', port: 55439});
+            socket.setTimeout(1000);
+            socket.once('connect', () => { socket.destroy(); resolve(true); });
+            socket.once('error', () => { socket.destroy(); resolve(false); });
+            socket.once('timeout', () => { socket.destroy(); resolve(false); });
+          });
+          let started = false;
+          for (let i = 0; i < 60; i++) {
+            if (await ready()) { started = true; break; }
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          if (!started) throw new Error('Test database did not start');
+          JS
+          mvn -B -f backend/pom.xml verify
+        env:
+          TEST_DATABASE_URL: jdbc:postgresql://127.0.0.1:55439/postgres?sslmode=disable&preferQueryMode=simple
+          TEST_DATABASE_USER: postgres
+          TEST_DATABASE_PASSWORD: ''
+          TEST_POOL_SIZE: '1'
+          TEST_FLYWAY: 'false'
+          REAL_POSTGRES: 'false'

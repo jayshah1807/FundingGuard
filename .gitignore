@@ -1,0 +1,17 @@
+**/node_modules/
+**/target/
+**/dist/
+**/.angular/
+.runtime/
+.cache/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+test-results/
+playwright-report/
+*.log
+.DS_Store

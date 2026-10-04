@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "projects": {
+    "fundingguard": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "outputPath": "dist/fundingguard",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public",
+                "output": "/"
+              }
+            ],
+            "styles": [
+              "src/styles.css"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": {"scripts": true, "styles": {"minify": true, "inlineCritical": false}, "fonts": false},
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1mb",
+                  "maximumError": "2mb"
+                }
+              ]
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "fundingguard:build"
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "analytics": false,
+    "cache": {
+      "enabled": false
+    }
+  }
+}
