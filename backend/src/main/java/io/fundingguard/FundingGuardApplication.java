@@ -7,5 +7,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 public class FundingGuardApplication {
-    public static void main(String[] args) { SpringApplication.run(FundingGuardApplication.class, args); }
+
+    public static void main(String[] args) {
+        SpringApplication.run(FundingGuardApplication.class, args);
+    }
 }

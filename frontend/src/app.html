@@ -1,97 +1,1214 @@
 @if (loading) {
-  <div class="boot"><div class="brand-mark"><i-lucide [img]="icons.ShieldCheck" [size]="25" /></div><span>Opening FundingGuard</span><span class="loader"></span></div>
+<div class="boot">
+  <div class="brand-mark">
+    <i-lucide [img]="icons.ShieldCheck" [size]="25" />
+  </div>
+  <span>Opening FundingGuard</span><span class="loader"></span>
+</div>
 } @else if (!user) {
-  <div class="login-page">
-    <div class="login-brand"><div class="brand-mark"><i-lucide [img]="icons.ShieldCheck" [size]="24" /></div><strong>FundingGuard</strong><span class="environment">SANDBOX</span></div>
-    <main class="login-form">
-      <div class="login-icon"><i-lucide [img]="icons.Fingerprint" [size]="30" /></div><p class="eyebrow">MORTGAGE PAYMENT INTEGRITY</p><h1>Welcome to your workspace</h1><p class="muted">Sign in to review, verify and release payout instructions.</p>
-      <form (ngSubmit)="login()">
-        <label for="persona">Workspace identity</label><select id="persona" name="persona" [(ngModel)]="email">@for (a of accounts; track a.email) {<option [value]="a.email">{{a.name}} · {{a.role}}</option>}</select>
-        <label for="password">Demo password</label><input id="password" type="password" name="password" [(ngModel)]="password" required autocomplete="current-password" placeholder="Enter the local demo password">
-        @if(loginError){<div class="form-error" role="alert">{{loginError}}</div>}
-        <button class="button primary full" type="submit" [disabled]="busy">{{busy?'Signing in…':'Sign in to workspace'}}<i-lucide [img]="icons.ArrowRight" [size]="17" /></button>
-      </form>
-      <div class="login-note"><i-lucide [img]="icons.LockKeyhole" [size]="17" /><span>Synthetic data only. Payments and verification are simulated.</span></div>
-    </main><footer>FundingGuard <span>Independent review. Accountable decisions.</span></footer>
-  </div>
-} @else {
-  <div class="shell">
-    @if(mobileNav){<button class="nav-scrim" aria-label="Close navigation" (click)="mobileNav=false"></button>}
-    <aside class="sidebar" [class.mobile-open]="mobileNav">
-      <a class="brand" href="#overview" (click)="navigate('overview')"><span class="brand-mark"><i-lucide [img]="icons.ShieldCheck" [size]="22" /></span><strong>FundingGuard</strong></a>
-      <div class="workspace"><span class="workspace-icon">M</span><div><strong>Maple Demo Lending</strong><small>Mortgage operations</small></div><i-lucide [img]="icons.LockKeyhole" [size]="13" /></div>
-      <p class="nav-label">WORKSPACE</p><nav aria-label="Main navigation">@for(n of nav;track n.id){<button [class.active]="view===n.id && !detail" (click)="navigate(n.id)"><i-lucide [img]="n.icon" [size]="18" /><span>{{n.label}}</span>@if(n.id==='investigations' && openCases){<b class="nav-badge">{{openCases}}</b>}</button>}</nav>
-      <div class="sidebar-bottom"><p class="nav-label">SYSTEM</p><button class="system-link" [class.active]="view==='controls'" (click)="navigate('controls')"><i-lucide [img]="icons.Settings2" [size]="18" />Control center</button><div class="sandbox-note"><span class="green-dot"></span><div><strong>Sandbox environment</strong><small>No real funds are moved</small></div></div>
-        <button class="profile" (click)="accountMenu=!accountMenu" aria-label="Account menu"><span class="avatar">{{initials(user.name)}}</span><div><strong>{{user.name}}</strong><small>{{nice(user.role)}}</small></div><i-lucide [img]="icons.ChevronDown" [size]="15" /></button>
-      </div>
-    </aside>
-    <div class="main-shell">
-      <header class="topbar"><div class="breadcrumbs"><button class="icon-button mobile-toggle" title="Open navigation" (click)="mobileNav=true"><i-lucide [img]="icons.Menu" [size]="20" /></button><span>Workspace</span><i-lucide [img]="icons.ChevronRight" [size]="14" /><strong>{{detail?'Payout detail':view==='overview'?'Overview':view==='controls'?'Control center':nice(view)}}</strong></div><div class="top-actions"><span class="environment">SANDBOX</span><span class="top-divider"></span><button class="icon-button" title="Refresh workspace" [disabled]="busy" (click)="refresh()"><i-lucide [img]="icons.RefreshCw" [size]="17" /></button><button class="icon-button notification-button" title="Notifications" [attr.aria-expanded]="notices" (click)="notices=!notices"><i-lucide [img]="icons.Bell" [size]="19" />@if(data.notifications.length){<span></span>}</button><span class="avatar small">{{initials(user.name)}}</span></div></header>
-      @if(error&&!modal){<div class="page-error" role="alert">{{error}} <button (click)="refresh()">Retry</button></div>}
-      <main>
-      @if(detail){
-        <button class="back-link" (click)="navigate('payouts')"><i-lucide [img]="icons.ArrowLeft" [size]="16" />Payout queue</button>
-        <div class="page-heading"><div><div class="heading-line"><h1>{{detail.payout.id}}</h1><span class="status" [class]="'status '+tone(detail.payout)"><span></span>{{status(detail.payout)}}</span></div><p>{{detail.payout.borrower}} <span class="dot-separator">·</span> {{detail.payout.property}}</p></div><button class="button" (click)="exportAudit()"><i-lucide [img]="icons.Download" [size]="16" />Export audit</button></div>
-        @if(detail.payout.hold_active){<div class="risk-banner"><div class="risk-icon"><i-lucide [img]="icons.ShieldAlert" [size]="23" /></div><div><strong>Funding paused. Independent review required.</strong><p>{{detail.payout.hold_reason}}</p></div><span class="badge-outline">ACTIVE HOLD</span></div>}
-        <div class="detail-grid"><section class="detail-main">
-          <div class="money-strip"><div><p class="eyebrow">PAYOUT AMOUNT</p><div class="large-money">{{money(detail.payout.amount_minor)}}<span>CAD</span></div></div><div><span class="muted">Funding date</span><strong>{{date(detail.payout.deadline)}}</strong></div><div><span class="muted">Instructions</span><strong>Version {{detail.payout.version}}</strong></div></div>
-          <div class="steps">@for(step of ['Prepared','Verified','Approved','Released'];track step;let i=$index){<div [class.complete]="i===0||(i===1&&detail.payout.verified_version===detail.payout.version)||(i===2&&detail.payout.approved_version===detail.payout.version)||(i===3&&detail.payout.state==='RELEASED_SIMULATED')"><span class="step-circle">@if(i===0||(i===1&&detail.payout.verified_version===detail.payout.version)||(i===2&&detail.payout.approved_version===detail.payout.version)||(i===3&&detail.payout.state==='RELEASED_SIMULATED')){<i-lucide [img]="icons.Check" [size]="14" />}@else{ {{i+1}} }</span>{{step}}</div>}</div>
-          <div class="tabs"><button [class.selected]="detailTab==='instructions'" (click)="detailTab='instructions'">Instructions</button><button [class.selected]="detailTab==='history'" (click)="detailTab='history'">Version history <span>{{detail.versions.length}}</span></button><button [class.selected]="detailTab==='activity'" (click)="detailTab='activity'">Activity trail</button></div>
-          @if(detailTab==='instructions'){
-            <section class="section-block"><div class="section-heading"><h2>Payment instructions</h2><span class="version-tag">v{{detail.payout.version}} · Current</span></div><dl class="details-list"><div><dt>Receiving institution</dt><dd>{{detail.payout.lender}}</dd></div><div><dt>Recipient account</dt><dd class="mono">{{detail.payout.account}} <i-lucide [img]="icons.LockKeyhole" [size]="13" /></dd></div><div><dt>Existing loan reference</dt><dd class="mono">{{detail.payout.loan_reference}}</dd></div><div><dt>Borrower</dt><dd>{{detail.payout.borrower}}</dd></div><div><dt>Currency</dt><dd>CAD · Canadian dollar</dd></div></dl></section>
-            <section class="section-block"><div class="section-heading"><h2>Verification source</h2><span class="status neutral">Synthetic registry</span></div><div class="contact-inline"><span class="contact-symbol"><i-lucide [img]="icons.Landmark" [size]="22" /></span><div><strong>{{detail.payout.contact_name}}</strong><p>{{detail.payout.contact_channel}}</p></div></div><p class="caption">{{detail.payout.contact_provenance}}</p>@for(v of detail.verifications;track v.id){<div class="evidence"><i-lucide [img]="icons.CircleCheck" [size]="17" /><div><strong>{{v.actor_name}} · Version {{v.instruction_version}}</strong><p>{{v.evidence}}</p><small>{{date(v.created_at)}} at {{time(v.created_at)}}</small></div></div>}</section>
-            @if(detail.payout.state==='RELEASED_SIMULATED'){<section class="section-block"><h2>Post-release confirmations</h2>@for(t of ['receipt','discharge'];track t){<div class="confirmation-row"><div><strong>{{nice(t)}} confirmation</strong><p>{{detail.payout[t]?'Recorded with synthetic evidence':'Awaiting independent evidence'}}</p></div>@if(!detail.payout[t]&&user.role==='OPERATIONS'){<button class="button small-button" (click)="confirmationType=t;openModal('confirm')">Record</button>}@else{<i-lucide [img]="detail.payout[t]?icons.CircleCheck:icons.Clock3" [size]="20" />}</div>}</section>}
-          }
-          @if(detailTab==='history'){<section class="section-block"><h2>Instruction versions</h2>@for(v of detail.versions;track v.id){<div class="version-entry"><div class="version-number">v{{v.version}}</div><div><strong>{{money(v.amount_minor)}} <span class="muted">· Account {{v.account}}</span></strong><p>{{v.reason}}</p><small>{{date(v.created_at)}} at {{time(v.created_at)}}</small></div>@if(v.version===detail.payout.version){<span class="version-tag">Current</span>}</div>}</section>}
-          @if(detailTab==='activity'){<section class="section-block"><h2>Decision history</h2><div class="timeline">@for(a of detail.audit;track a.id){<div class="timeline-item"><div class="timeline-icon"><i-lucide [img]="eventIcon(a.action)" [size]="17" /></div><div><strong>{{nice(a.action)}}</strong><p>{{a.detail}}</p><small>{{a.actor_name}} · {{date(a.created_at)}} {{time(a.created_at)}}</small></div></div>}</div></section>}
-        </section><aside class="decision-panel"><div class="panel-title"><i-lucide [img]="icons.ShieldCheck" [size]="20" /><h2>Release controls</h2></div><p class="caption">Checked again at the moment of release.</p>
-          @if(detail.payout.state==='RELEASED_SIMULATED'){<div class="released-message"><i-lucide [img]="icons.CheckCheck" [size]="30" /><strong>Simulation recorded</strong><p>One immutable ledger entry. No real funds moved.</p></div>}@else{
-          @if(detail.blockers.length){@for(b of detail.blockers;track b){<div class="blocker"><i-lucide [img]="icons.CircleAlert" [size]="16" /><span>{{b}}</span></div>}}@else{<div class="ready-message"><i-lucide [img]="icons.CircleCheck" [size]="18" />All release checks passed</div>}
-          <div class="decision-actions">
-            @if(user.role==='OPERATIONS'){<button class="button primary full" [disabled]="detail.blockers.length>0" (click)="openModal('release')"><i-lucide [img]="icons.ArrowUpRight" [size]="17" />Release simulation</button><button class="button full" (click)="openModal('revise')"><i-lucide [img]="icons.FileText" [size]="16" />Revise instructions</button>}
-            @if(user.role==='VERIFIER'){<button class="button primary full" (click)="openModal('verify')"><i-lucide [img]="icons.Fingerprint" [size]="17" />Record verification</button>}
-            @if(user.role==='APPROVER'){<button class="button primary full" [disabled]="detail.payout.hold_active" (click)="openModal('approve')"><i-lucide [img]="icons.CircleCheck" [size]="17" />Approve instructions</button>@if(detail.payout.clearance_by){<button class="button full" (click)="openModal('clear')">Countersign clearance</button>}}
-            @if(user.role==='SECURITY'){<button class="button full" (click)="openModal(detail.payout.hold_active?'clear':'hold')"><i-lucide [img]="icons.ShieldAlert" [size]="17" />{{detail.payout.hold_active?'Propose clearance':'Place security hold'}}</button>}
-          </div>}
-          <div class="role-note"><span class="avatar small">{{initials(user.name)}}</span><div><strong>{{nice(user.role)}}</strong><small>{{user.name}}</small></div></div><p class="caption">Preparation, verification and approval require separate people.</p>
-          @if(detail.payout.approved_at){<div class="expiry-note"><i-lucide [img]="icons.Clock3" [size]="16" /><span>Approval expires 30 minutes after {{time(detail.payout.approved_at)}}.</span></div>}
-        </aside></div>
-      } @else if(view==='overview'||view==='payouts'){
-        <div class="page-heading"><div><p class="eyebrow">{{view==='overview'?'YOUR OPERATIONS, AT A GLANCE':'MORTGAGE OPERATIONS'}}</p><h1>{{view==='overview'?'Payout operations':'Payout queue'}}</h1><p>{{view==='overview'?today:'Review the details. Verify the destination. Release with confidence.'}}</p></div><div class="heading-actions"><button class="button" (click)="exportAudit()"><i-lucide [img]="icons.Download" [size]="16" />Export audit</button><button class="button primary" [disabled]="user.role!=='OPERATIONS'" title="Operations role required" (click)="openModal('create')"><i-lucide [img]="icons.Plus" [size]="17" />New payout</button></div></div>
-        <div class="metrics"><article><div class="metric-label">Pending payout value<i-lucide [img]="icons.Landmark" [size]="17" /></div><div class="metric-value">{{compactMoney(total)}}<small>CAD</small></div><div class="metric-foot">Across {{activeCount}} open obligations</div></article><article><div class="metric-label">Ready to release<i-lucide [img]="icons.CircleCheck" [size]="17" /></div><div class="metric-value">{{ready}}<span class="metric-chip success">Verified & approved</span></div><div class="metric-foot"><span class="green-dot"></span>All release controls passed</div></article><article><div class="metric-label">Needs attention<i-lucide [img]="icons.ShieldAlert" [size]="17" /></div><div class="metric-value">{{holds}}<span class="metric-chip warning">On hold</span></div><div class="metric-foot">Independent review required</div></article><article><div class="metric-label">Recorded releases<i-lucide [img]="icons.ArrowUpRight" [size]="17" /></div><div class="metric-value">{{data.ledger.length}}<small>simulated</small></div><div class="metric-foot">Immutable ledger entries</div></article></div>
-        @if(holds&&view==='overview'){<div class="attention-strip"><span class="attention-icon"><i-lucide [img]="icons.ShieldAlert" [size]="19" /></span><div><strong>{{holds}} payout{{holds===1?'':'s'}} paused for security review</strong><span> Resolve outstanding holds before releasing funds.</span></div><button (click)="filter='On hold';view='payouts'"><span>Review payouts</span><i-lucide [img]="icons.ArrowRight" [size]="16" /></button></div>}
-        <div class="operations-grid" [class.full-width]="view==='payouts'"><section class="queue-section"><div class="section-heading"><div class="heading-line"><h2>Payout queue</h2><span class="count-badge">{{data.payouts.length}}</span></div><span class="live-label"><span class="green-dot"></span>Live workspace</span></div>
-          <div class="queue-tabs"><button [class.selected]="filter==='All payouts'" (click)="queueFilter('All payouts')">All payouts</button><button [class.selected]="filter==='Ready to release'" (click)="queueFilter('Ready to release')">Ready <span>{{ready}}</span></button><button [class.selected]="filter==='On hold'" (click)="queueFilter('On hold')">On hold <span>{{holds}}</span></button></div>
-          <div class="table-tools"><label class="search-input"><i-lucide [img]="icons.Search" [size]="17" /><input [(ngModel)]="query" placeholder="Search borrower, reference or lender…" aria-label="Search payouts"></label><select class="filter-select" [(ngModel)]="filter" aria-label="Filter payout status"><option>All payouts</option><option>Needs verification</option><option>Awaiting approval</option><option>Ready to release</option><option>On hold</option><option>Released</option></select></div>
-          <div class="table-scroll"><table class="payout-table"><thead><tr><th>Borrower / reference</th><th>Amount <small>CAD</small></th><th>Status</th><th>Funding</th><th><span class="sr-only">Details</span></th></tr></thead><tbody>@for(p of filtered;track p.id){<tr (click)="openPayout(p.id)"><td><div class="borrower-cell"><span class="borrower-avatar" [class.warm]="p.hold_active">{{initials(p.borrower)}}</span><div><button class="row-link" (click)="$event.stopPropagation();openPayout(p.id)">{{p.borrower}}</button><small>{{p.id}}<span>·</span>v{{p.version}}</small></div></div></td><td class="amount-cell">{{money(p.amount_minor)}}</td><td><span [class]="'status '+tone(p)"><span></span>{{status(p)}}</span></td><td class="date-cell">{{date(p.deadline)}}</td><td><i-lucide [img]="icons.ChevronRight" [size]="15" /></td></tr>}@empty{<tr><td colspan="5"><div class="empty-state"><i-lucide [img]="icons.Search" [size]="28" /><strong>No matching payouts</strong><p>Try another reference or status.</p><button class="text-button" (click)="query='';filter='All payouts'">Clear filters</button></div></td></tr>}</tbody></table></div><div class="table-footer"><span>{{filtered.length}} of {{data.payouts.length}} payouts</span><span>All amounts in Canadian dollars</span></div>
-        </section>
-        @if(view==='overview'){<aside class="activity-panel"><div class="section-heading"><h2>Recent activity</h2><i-lucide [img]="icons.Activity" [size]="18" /></div><p class="caption">A clear record of every decision.</p><div class="timeline">@for(a of data.audit.slice(0,5);track a.id){<div class="timeline-item"><div class="timeline-icon" [class.alert-icon]="a.action.includes('HOLD')"><i-lucide [img]="eventIcon(a.action)" [size]="16" /></div><div><strong>{{nice(a.action)}}</strong><button class="activity-reference" (click)="openPayout(a.payout_id)">{{a.payout_id}}</button><p>{{a.actor_name}}<span> · {{ago(a.created_at)}}</span></p></div></div>}</div><button class="activity-all" (click)="navigate('audit')">View audit trail<i-lucide [img]="icons.ArrowRight" [size]="16" /></button><div class="integrity-note"><i-lucide [img]="icons.Fingerprint" [size]="26" /><h3>Every release has a record.</h3><p>Version-bound approvals. Independent reviewers. One release per obligation.</p></div></aside>}
-        </div>
-        <div class="system-band"><div><i-lucide [img]="icons.ShieldCheck" [size]="17" /><span>Server-enforced release controls</span></div><div><i-lucide [img]="icons.LockKeyhole" [size]="16" /><span>Account details masked</span></div><div><span class="green-dot"></span><span>{{data.pendingJobs===0?'Outbox up to date':data.pendingJobs+' events processing'}}</span></div></div>
-      } @else if(view==='investigations'){
-        <div class="page-heading"><div><p class="eyebrow">SECURITY OPERATIONS</p><h1>Investigations</h1><p>Evidence first. Clear decisions, with a complete history.</p></div><span class="status warning">{{openCases}} open</span></div><label class="search-input standalone-search"><i-lucide [img]="icons.Search" [size]="17" /><input [(ngModel)]="query" placeholder="Search investigations…" aria-label="Search investigations"></label>
-        <div class="case-list">@for(c of caseRows;track c.id){<article class="case-card"><div class="case-top"><span class="case-symbol"><i-lucide [img]="icons.ShieldAlert" [size]="23" /></span><div><p class="eyebrow">{{c.id}} · {{c.rule_code}}</p><h2>{{c.title}}</h2></div><span [class]="'status '+(c.state==='OPEN'?'warning':'success')">{{nice(c.state)}}</span></div><p>{{c.detail}}</p><div class="case-meta"><span>{{c.borrower}}</span><strong>{{money(c.amount_minor)}}</strong><span>{{date(c.created_at)}} · {{time(c.created_at)}}</span></div>@if(c.resolution){<div class="evidence">{{c.resolution}}</div>}<div class="case-actions"><button class="button" (click)="openPayout(c.payout_id)">Open {{c.payout_id}}<i-lucide [img]="icons.ArrowUpRight" [size]="16" /></button>@if(c.state==='OPEN'&&user.role==='SECURITY'){<button class="button primary" (click)="selectedCase=c.id;openModal('resolve')">Resolve case</button>}</div></article>}@empty{<div class="empty-state"><i-lucide [img]="icons.ShieldCheck" [size]="36" /><h2>No investigations found</h2><p>Your queue is clear for the selected search.</p></div>}</div>
-      } @else if(view==='ledger'){
-        <div class="page-heading"><div><p class="eyebrow">PAYMENT INTEGRITY</p><h1>Release ledger</h1><p>Committed simulations. One immutable entry per payout obligation.</p></div><span class="environment">NO REAL FUNDS MOVED</span></div><label class="search-input standalone-search"><i-lucide [img]="icons.Search" [size]="17" /><input [(ngModel)]="query" placeholder="Search ledger reference…" aria-label="Search ledger"></label><div class="table-scroll bordered-table"><table><thead><tr><th>Ledger reference</th><th>Borrower</th><th>Amount · CAD</th><th>Destination</th><th>Recorded</th></tr></thead><tbody>@for(l of ledgerRows;track l.id){<tr><td><button class="row-link mono" (click)="openPayout(l.payout_id)">{{l.id}}</button><small>{{l.payout_id}} · v{{l.instruction_version}}</small></td><td>{{l.borrower}}</td><td class="amount-cell">{{money(l.amount_minor)}}</td><td class="mono">{{l.account}}</td><td>{{date(l.created_at)}} {{time(l.created_at)}}</td></tr>}@empty{<tr><td colspan="5"><div class="empty-state tall"><div class="empty-icon"><i-lucide [img]="icons.Landmark" [size]="30" /></div><h2>No releases recorded yet</h2><p>Verified, approved payouts appear here after a simulated release.</p><button class="button" (click)="navigate('payouts');filter='Ready to release'">View ready payouts<i-lucide [img]="icons.ArrowRight" [size]="16" /></button></div></td></tr>}</tbody></table></div>
-      } @else if(view==='audit'){
-        <div class="page-heading"><div><p class="eyebrow">ACCOUNTABILITY</p><h1>Audit trail</h1><p>Who acted, what changed, and why. Latest 200 events.</p></div><button class="button" (click)="exportAudit()"><i-lucide [img]="icons.Download" [size]="17" />Export CSV</button></div><label class="search-input standalone-search"><i-lucide [img]="icons.Search" [size]="17" /><input [(ngModel)]="query" placeholder="Search actor, action or reference…" aria-label="Search audit trail"></label><div class="table-scroll bordered-table"><table><thead><tr><th>Event</th><th>Actor</th><th>Reference</th><th>Details</th><th>Time</th></tr></thead><tbody>@for(a of auditRows;track a.id){<tr><td><span class="audit-action"><i-lucide [img]="eventIcon(a.action)" [size]="16" />{{nice(a.action)}}</span></td><td>{{a.actor_name}}</td><td><button class="row-link mono" (click)="openPayout(a.payout_id)">{{a.payout_id}}</button></td><td class="audit-detail">{{a.detail}}</td><td class="nowrap">{{time(a.created_at)}}<small>{{date(a.created_at)}}</small></td></tr>}@empty{<tr><td colspan="5"><div class="empty-state">No events match your search.</div></td></tr>}</tbody></table></div>
-      } @else if(view==='contacts'){
-        <div class="page-heading"><div><p class="eyebrow">VERIFICATION SOURCES</p><h1>Trusted contacts</h1><p>Established channels for independent payout verification.</p></div><span class="status neutral">Seeded demo registry</span></div><div class="contact-grid">@for(c of data.contacts;track c.id){<article class="contact-card"><div class="contact-symbol"><i-lucide [img]="icons.Landmark" [size]="25" /></div><h2>{{c.institution}}</h2><p>{{c.name}}</p><strong>{{c.channel}}</strong><div class="contact-footer"><span class="status success"><span></span>Active</span><span>Version {{c.version}}</span></div><p class="caption">{{c.provenance}}</p></article>}</div><div class="plain-note"><i-lucide [img]="icons.CircleHelp" [size]="18" /><span>These are fictional contacts. No real institution or account ownership has been verified.</span></div>
-      } @else {
-        <div class="page-heading"><div><p class="eyebrow">SYSTEM ASSURANCE</p><h1>Control center</h1><p>Implemented safeguards and explicit simulation boundaries.</p></div><span class="version-tag">v1.0 · Portfolio build</span></div><section class="controls-list">@for(c of [{title:'Independent review',detail:'Separate preparation, verification and approval identities.',value:'Enforced'},{title:'Approval validity',detail:'Approval is bound to the current instructions and contact version.',value:'30 minutes'},{title:'Verification validity',detail:'Release checks the age of verification evidence again.',value:'24 hours'},{title:'Duplicate-release protection',detail:'Database uniqueness plus request idempotency.',value:'Enforced'},{title:'Payment limit',detail:'CAD only. One full payout per obligation.',value:'$1,000,000'},{title:'Evidence retention',detail:'Database triggers prevent normal updates to versions, audit and ledger.',value:'Append-only'},{title:'Background outbox',detail:'Durable local notifications; no external email or SMS.',value:data.pendingJobs+' pending'}];track c.title){<div><span class="control-icon"><i-lucide [img]="icons.ShieldCheck" [size]="19" /></span><section><h2>{{c.title}}</h2><p>{{c.detail}}</p></section><strong>{{c.value}}</strong></div>}</section><div class="plain-note"><i-lucide [img]="icons.CircleAlert" [size]="18" /><span>Document uploads, live bank verification, real payments and production identity integrations are not enabled in this build.</span></div>
-      }
-      </main><footer class="app-footer"><span>FundingGuard <span class="dot-separator">/</span> Mortgage payment integrity</span><span>Synthetic data · Local-first sandbox</span></footer>
+<div class="login-page">
+  <div class="login-brand">
+    <div class="brand-mark">
+      <i-lucide [img]="icons.ShieldCheck" [size]="24" />
     </div>
+    <strong>FundingGuard</strong><span class="environment">SANDBOX</span>
   </div>
-  @if(accountMenu){<div class="account-popover"><p class="eyebrow">SWITCH DEMO IDENTITY</p>@for(a of accounts;track a.email){<button (click)="switchAccount(a.email)"><span class="avatar small">{{a.initials}}</span><span><strong>{{a.name}}</strong><small>{{a.role}}</small></span>@if(user.email===a.email){<i-lucide [img]="icons.Check" [size]="15" />}</button>}<button class="logout" (click)="logout()"><i-lucide [img]="icons.LogOut" [size]="16" />Sign out</button></div>}
-  @if(notices){<div class="notifications-popover"><div class="section-heading"><h2>Notifications</h2><button class="icon-button" (click)="notices=false" aria-label="Close notifications"><i-lucide [img]="icons.X" [size]="16" /></button></div>@for(n of data.notifications;track n.id){<article><strong>{{nice(n.title)}}</strong><p>{{n.detail}}</p><small>{{ago(n.created_at)}}</small></article>}@empty{<p class="muted">No notifications yet.</p>}</div>}
-  @if(modal){<div class="modal-backdrop" (click)="!busy&&(modal='')"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" (click)="$event.stopPropagation()"><div class="modal-heading"><div><p class="eyebrow">{{modal==='create'?'MORTGAGE OPERATIONS':selectedId}}</p><h2 id="modal-title">{{modalTitle}}</h2></div><button class="icon-button" [disabled]="busy" (click)="modal=''" aria-label="Close dialog"><i-lucide [img]="icons.X" [size]="21" /></button></div><form (ngSubmit)="submit()">
-    @if(modal==='create'){<div class="form-grid"><label>Borrower name<input name="borrower" [(ngModel)]="form.borrower" required maxlength="100" placeholder="Synthetic borrower name"></label><label>Existing loan reference<input name="loan" [(ngModel)]="form.loanReference" required maxlength="80" placeholder="DEMO-LOAN-1050"></label><label class="span-2">Property address<input name="property" [(ngModel)]="form.property" required maxlength="200" placeholder="Synthetic property address"></label><label class="span-2">Receiving institution<select name="contact" [(ngModel)]="form.contactId">@for(c of data.contacts;track c.id){<option [value]="c.id">{{c.institution}}</option>}</select></label><label>Amount · CAD<input name="amount" [(ngModel)]="form.amount" inputmode="decimal" required placeholder="450000.00"></label><label>Funding date<input name="date" type="date" [(ngModel)]="form.deadline" required></label><label class="span-2">Synthetic receiving account<input name="account" [(ngModel)]="form.account" inputmode="numeric" required pattern="[0-9]{6,18}" placeholder="6–18 digits; no real account information"></label></div>}
-    @if(modal==='revise'){<div class="modal-warning"><i-lucide [img]="icons.CircleAlert" [size]="19" /><span>A new version invalidates the current verification and approval.</span></div><label>Amount · CAD<input name="amount" [(ngModel)]="actionAmount" inputmode="decimal" required></label><label>New synthetic account<input name="account" [(ngModel)]="actionAccount" inputmode="numeric" required pattern="[0-9]{6,18}" placeholder="Enter the full synthetic account"></label>}
-    @if(modal==='verify'){<div class="verification-contact"><i-lucide [img]="icons.Landmark" [size]="20" /><div><strong>{{detail.payout.contact_name}}</strong><p>{{detail.payout.contact_channel}} · Contact v{{detail.payout.contact_version}}</p></div></div><p class="caption">Use the established channel. A number from replacement instructions is not independent verification.</p>}
-    @if(['approve','release'].includes(modal)){<div class="review-summary"><span>{{detail.payout.borrower}}</span><strong>{{money(detail.payout.amount_minor)}} CAD</strong><p>{{detail.payout.lender}}</p><p class="mono">Account {{detail.payout.account}} · Instructions v{{detail.payout.version}}</p></div><label class="checkbox-label"><input type="checkbox" name="confirm" [(ngModel)]="confirmation" required><span>I reviewed the current amount, recipient and instruction version. This action uses synthetic data only.</span></label>@if(modal==='release'){<p class="caption">This records a local ledger entry. It cannot send money to a bank.</p>}}
-    @if(!['create','approve','release'].includes(modal)){<label>{{modal==='verify'||modal==='confirm'?'Evidence and independent checks':'Reason and supporting evidence'}}<textarea name="reason" [(ngModel)]="actionReason" required minlength="12" maxlength="600" rows="4" placeholder="Describe what was checked and the basis for this decision…"></textarea></label>}
-    @if(error){<div class="form-error" role="alert">{{error}}</div>}<div class="modal-footer"><button type="button" class="button" [disabled]="busy" (click)="modal=''">Cancel</button><button type="submit" class="button primary" [disabled]="busy">{{busy?'Saving…':modal==='create'?'Create payout':modal==='release'?'Confirm simulation':'Save decision'}}<i-lucide [img]="icons.ArrowRight" [size]="16" /></button></div>
-  </form></section></div>}
+  <main class="login-form">
+    <div class="login-icon">
+      <i-lucide [img]="icons.Fingerprint" [size]="30" />
+    </div>
+    <p class="eyebrow">MORTGAGE PAYMENT INTEGRITY</p>
+    <h1>Welcome to your workspace</h1>
+    <p class="muted">
+      Sign in to review, verify and release payout instructions.
+    </p>
+    <form (ngSubmit)="login()">
+      <label for="persona">Workspace identity</label
+      ><select id="persona" name="persona" [(ngModel)]="email">
+        @for (a of accounts; track a.email) {
+        <option [value]="a.email">{{a.name}} · {{a.role}}</option>
+        }
+      </select>
+      <label for="password">Demo password</label
+      ><input
+        id="password"
+        type="password"
+        name="password"
+        [(ngModel)]="password"
+        required
+        autocomplete="current-password"
+        placeholder="Enter the local demo password"
+      />
+      @if(loginError){
+      <div class="form-error" role="alert">{{loginError}}</div>
+      }
+      <button class="button primary full" type="submit" [disabled]="busy">
+        {{busy?'Signing in…':'Sign in to workspace'}}<i-lucide
+          [img]="icons.ArrowRight"
+          [size]="17"
+        />
+      </button>
+    </form>
+    <div class="login-note">
+      <i-lucide [img]="icons.LockKeyhole" [size]="17" /><span
+        >Synthetic data only. Payments and verification are simulated.</span
+      >
+    </div>
+  </main>
+  <footer>
+    FundingGuard <span>Independent review. Accountable decisions.</span>
+  </footer>
+</div>
+} @else {
+<div class="shell">
+  @if(mobileNav){<button
+    class="nav-scrim"
+    aria-label="Close navigation"
+    (click)="mobileNav=false"
+  ></button
+  >}
+  <aside class="sidebar" [class.mobile-open]="mobileNav">
+    <a class="brand" href="#overview" (click)="navigate('overview')"
+      ><span class="brand-mark"
+        ><i-lucide [img]="icons.ShieldCheck" [size]="22" /></span
+      ><strong>FundingGuard</strong></a
+    >
+    <div class="workspace">
+      <span class="workspace-icon">M</span>
+      <div>
+        <strong>Maple Demo Lending</strong><small>Mortgage operations</small>
+      </div>
+      <i-lucide [img]="icons.LockKeyhole" [size]="13" />
+    </div>
+    <p class="nav-label">WORKSPACE</p>
+    <nav aria-label="Main navigation">
+      @for(n of nav;track n.id){<button
+        [class.active]="view===n.id && !detail"
+        (click)="navigate(n.id)"
+      >
+        <i-lucide [img]="n.icon" [size]="18" /><span>{{n.label}}</span
+        >@if(n.id==='investigations' && openCases){<b class="nav-badge"
+          >{{openCases}}</b
+        >}</button
+      >}
+    </nav>
+    <div class="sidebar-bottom">
+      <p class="nav-label">SYSTEM</p>
+      <button
+        class="system-link"
+        [class.active]="view==='controls'"
+        (click)="navigate('controls')"
+      >
+        <i-lucide [img]="icons.Settings2" [size]="18" />Control center
+      </button>
+      <div class="sandbox-note">
+        <span class="green-dot"></span>
+        <div>
+          <strong>Sandbox environment</strong
+          ><small>No real funds are moved</small>
+        </div>
+      </div>
+      <button
+        class="profile"
+        (click)="accountMenu=!accountMenu"
+        aria-label="Account menu"
+      >
+        <span class="avatar">{{initials(user.name)}}</span>
+        <div>
+          <strong>{{user.name}}</strong><small>{{nice(user.role)}}</small>
+        </div>
+        <i-lucide [img]="icons.ChevronDown" [size]="15" />
+      </button>
+    </div>
+  </aside>
+  <div class="main-shell">
+    <header class="topbar">
+      <div class="breadcrumbs">
+        <button
+          class="icon-button mobile-toggle"
+          title="Open navigation"
+          (click)="mobileNav=true"
+        >
+          <i-lucide [img]="icons.Menu" [size]="20" /></button
+        ><span>Workspace</span
+        ><i-lucide [img]="icons.ChevronRight" [size]="14" /><strong
+          >{{detail?'Payout
+          detail':view==='overview'?'Overview':view==='controls'?'Control
+          center':nice(view)}}</strong
+        >
+      </div>
+      <div class="top-actions">
+        <span class="environment">SANDBOX</span><span class="top-divider"></span
+        ><button
+          class="icon-button"
+          title="Refresh workspace"
+          [disabled]="busy"
+          (click)="refresh()"
+        >
+          <i-lucide [img]="icons.RefreshCw" [size]="17" /></button
+        ><button
+          class="icon-button notification-button"
+          title="Notifications"
+          [attr.aria-expanded]="notices"
+          (click)="notices=!notices"
+        >
+          <i-lucide
+            [img]="icons.Bell"
+            [size]="19"
+          />@if(data.notifications.length){<span></span>}</button
+        ><span class="avatar small">{{initials(user.name)}}</span>
+      </div>
+    </header>
+    @if(error&&!modal){
+    <div class="page-error" role="alert">
+      {{error}} <button (click)="refresh()">Retry</button>
+    </div>
+    }
+    <main>
+      @if(detail){
+      <button class="back-link" (click)="navigate('payouts')">
+        <i-lucide [img]="icons.ArrowLeft" [size]="16" />Payout queue
+      </button>
+      <div class="page-heading">
+        <div>
+          <div class="heading-line">
+            <h1>{{detail.payout.id}}</h1>
+            <span class="status" [class]="'status '+tone(detail.payout)"
+              ><span></span>{{status(detail.payout)}}</span
+            >
+          </div>
+          <p>
+            {{detail.payout.borrower}}
+            <span class="dot-separator">·</span> {{detail.payout.property}}
+          </p>
+        </div>
+        <button class="button" (click)="exportAudit()">
+          <i-lucide [img]="icons.Download" [size]="16" />Export audit
+        </button>
+      </div>
+      @if(detail.payout.hold_active){
+      <div class="risk-banner">
+        <div class="risk-icon">
+          <i-lucide [img]="icons.ShieldAlert" [size]="23" />
+        </div>
+        <div>
+          <strong>Funding paused. Independent review required.</strong>
+          <p>{{detail.payout.hold_reason}}</p>
+        </div>
+        <span class="badge-outline">ACTIVE HOLD</span>
+      </div>
+      }
+      <div class="detail-grid">
+        <section class="detail-main">
+          <div class="money-strip">
+            <div>
+              <p class="eyebrow">PAYOUT AMOUNT</p>
+              <div class="large-money">
+                {{money(detail.payout.amount_minor)}}<span>CAD</span>
+              </div>
+            </div>
+            <div>
+              <span class="muted">Funding date</span
+              ><strong>{{date(detail.payout.deadline)}}</strong>
+            </div>
+            <div>
+              <span class="muted">Instructions</span
+              ><strong>Version {{detail.payout.version}}</strong>
+            </div>
+          </div>
+          <div class="steps">
+            @for(step of ['Prepared','Verified','Approved','Released'];track
+            step;let i=$index){
+            <div
+              [class.complete]="i===0||(i===1&&detail.payout.verified_version===detail.payout.version)||(i===2&&detail.payout.approved_version===detail.payout.version)||(i===3&&detail.payout.state==='RELEASED_SIMULATED')"
+            >
+              <span class="step-circle"
+                >@if(i===0||(i===1&&detail.payout.verified_version===detail.payout.version)||(i===2&&detail.payout.approved_version===detail.payout.version)||(i===3&&detail.payout.state==='RELEASED_SIMULATED')){<i-lucide
+                  [img]="icons.Check"
+                  [size]="14"
+                />}@else{ {{i+1}} }</span
+              >{{step}}
+            </div>
+            }
+          </div>
+          <div class="tabs">
+            <button
+              [class.selected]="detailTab==='instructions'"
+              (click)="detailTab='instructions'"
+            >
+              Instructions</button
+            ><button
+              [class.selected]="detailTab==='history'"
+              (click)="detailTab='history'"
+            >
+              Version history <span>{{detail.versions.length}}</span></button
+            ><button
+              [class.selected]="detailTab==='activity'"
+              (click)="detailTab='activity'"
+            >
+              Activity trail
+            </button>
+          </div>
+          @if(detailTab==='instructions'){
+          <section class="section-block">
+            <div class="section-heading">
+              <h2>Payment instructions</h2>
+              <span class="version-tag"
+                >v{{detail.payout.version}} · Current</span
+              >
+            </div>
+            <dl class="details-list">
+              <div>
+                <dt>Receiving institution</dt>
+                <dd>{{detail.payout.lender}}</dd>
+              </div>
+              <div>
+                <dt>Recipient account</dt>
+                <dd class="mono">
+                  {{detail.payout.account}}
+                  <i-lucide [img]="icons.LockKeyhole" [size]="13" />
+                </dd>
+              </div>
+              <div>
+                <dt>Existing loan reference</dt>
+                <dd class="mono">{{detail.payout.loan_reference}}</dd>
+              </div>
+              <div>
+                <dt>Borrower</dt>
+                <dd>{{detail.payout.borrower}}</dd>
+              </div>
+              <div>
+                <dt>Currency</dt>
+                <dd>CAD · Canadian dollar</dd>
+              </div>
+            </dl>
+          </section>
+          <section class="section-block">
+            <div class="section-heading">
+              <h2>Verification source</h2>
+              <span class="status neutral">Synthetic registry</span>
+            </div>
+            <div class="contact-inline">
+              <span class="contact-symbol"
+                ><i-lucide [img]="icons.Landmark" [size]="22"
+              /></span>
+              <div>
+                <strong>{{detail.payout.contact_name}}</strong>
+                <p>{{detail.payout.contact_channel}}</p>
+              </div>
+            </div>
+            <p class="caption">{{detail.payout.contact_provenance}}</p>
+            @for(v of detail.verifications;track v.id){
+            <div class="evidence">
+              <i-lucide [img]="icons.CircleCheck" [size]="17" />
+              <div>
+                <strong
+                  >{{v.actor_name}} · Version {{v.instruction_version}}</strong
+                >
+                <p>{{v.evidence}}</p>
+                <small>{{date(v.created_at)}} at {{time(v.created_at)}}</small>
+              </div>
+            </div>
+            }
+          </section>
+          @if(detail.payout.state==='RELEASED_SIMULATED'){
+          <section class="section-block">
+            <h2>Post-release confirmations</h2>
+            @for(t of ['receipt','discharge'];track t){
+            <div class="confirmation-row">
+              <div>
+                <strong>{{nice(t)}} confirmation</strong>
+                <p>
+                  {{detail.payout[t]?'Recorded with synthetic
+                  evidence':'Awaiting independent evidence'}}
+                </p>
+              </div>
+              @if(!detail.payout[t]&&user.role==='OPERATIONS'){<button
+                class="button small-button"
+                (click)="confirmationType=t;openModal('confirm')"
+              >
+                Record</button
+              >}@else{<i-lucide
+                [img]="detail.payout[t]?icons.CircleCheck:icons.Clock3"
+                [size]="20"
+              />}
+            </div>
+            }
+          </section>
+          } } @if(detailTab==='history'){
+          <section class="section-block">
+            <h2>Instruction versions</h2>
+            @for(v of detail.versions;track v.id){
+            <div class="version-entry">
+              <div class="version-number">v{{v.version}}</div>
+              <div>
+                <strong
+                  >{{money(v.amount_minor)}}
+                  <span class="muted">· Account {{v.account}}</span></strong
+                >
+                <p>{{v.reason}}</p>
+                <small>{{date(v.created_at)}} at {{time(v.created_at)}}</small>
+              </div>
+              @if(v.version===detail.payout.version){<span class="version-tag"
+                >Current</span
+              >}
+            </div>
+            }
+          </section>
+          } @if(detailTab==='activity'){
+          <section class="section-block">
+            <h2>Decision history</h2>
+            <div class="timeline">
+              @for(a of detail.audit;track a.id){
+              <div class="timeline-item">
+                <div class="timeline-icon">
+                  <i-lucide [img]="eventIcon(a.action)" [size]="17" />
+                </div>
+                <div>
+                  <strong>{{nice(a.action)}}</strong>
+                  <p>{{a.detail}}</p>
+                  <small
+                    >{{a.actor_name}} · {{date(a.created_at)}}
+                    {{time(a.created_at)}}</small
+                  >
+                </div>
+              </div>
+              }
+            </div>
+          </section>
+          }
+        </section>
+        <aside class="decision-panel">
+          <div class="panel-title">
+            <i-lucide [img]="icons.ShieldCheck" [size]="20" />
+            <h2>Release controls</h2>
+          </div>
+          <p class="caption">Checked again at the moment of release.</p>
+          @if(detail.payout.state==='RELEASED_SIMULATED'){
+          <div class="released-message">
+            <i-lucide [img]="icons.CheckCheck" [size]="30" /><strong
+              >Simulation recorded</strong
+            >
+            <p>One immutable ledger entry. No real funds moved.</p>
+          </div>
+          }@else{ @if(detail.blockers.length){@for(b of detail.blockers;track
+          b){
+          <div class="blocker">
+            <i-lucide [img]="icons.CircleAlert" [size]="16" /><span>{{b}}</span>
+          </div>
+          }}@else{
+          <div class="ready-message">
+            <i-lucide [img]="icons.CircleCheck" [size]="18" />All release checks
+            passed
+          </div>
+          }
+          <div class="decision-actions">
+            @if(user.role==='OPERATIONS'){<button
+              class="button primary full"
+              [disabled]="detail.blockers.length>0"
+              (click)="openModal('release')"
+            >
+              <i-lucide [img]="icons.ArrowUpRight" [size]="17" />Release
+              simulation</button
+            ><button class="button full" (click)="openModal('revise')">
+              <i-lucide [img]="icons.FileText" [size]="16" />Revise instructions</button
+            >} @if(user.role==='VERIFIER'){<button
+              class="button primary full"
+              (click)="openModal('verify')"
+            >
+              <i-lucide [img]="icons.Fingerprint" [size]="17" />Record
+              verification</button
+            >} @if(user.role==='APPROVER'){<button
+              class="button primary full"
+              [disabled]="detail.payout.hold_active"
+              (click)="openModal('approve')"
+            >
+              <i-lucide [img]="icons.CircleCheck" [size]="17" />Approve
+              instructions</button
+            >@if(detail.payout.clearance_by){<button
+              class="button full"
+              (click)="openModal('clear')"
+            >
+              Countersign clearance</button
+            >}} @if(user.role==='SECURITY'){<button
+              class="button full"
+              (click)="openModal(detail.payout.hold_active?'clear':'hold')"
+            >
+              <i-lucide
+                [img]="icons.ShieldAlert"
+                [size]="17"
+              />{{detail.payout.hold_active?'Propose clearance':'Place security
+              hold'}}</button
+            >}
+          </div>
+          }
+          <div class="role-note">
+            <span class="avatar small">{{initials(user.name)}}</span>
+            <div>
+              <strong>{{nice(user.role)}}</strong><small>{{user.name}}</small>
+            </div>
+          </div>
+          <p class="caption">
+            Preparation, verification and approval require separate people.
+          </p>
+          @if(detail.payout.approved_at){
+          <div class="expiry-note">
+            <i-lucide [img]="icons.Clock3" [size]="16" /><span
+              >Approval expires 30 minutes after
+              {{time(detail.payout.approved_at)}}.</span
+            >
+          </div>
+          }
+        </aside>
+      </div>
+      } @else if(view==='overview'||view==='payouts'){
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">
+            {{view==='overview'?'YOUR OPERATIONS, AT A GLANCE':'MORTGAGE
+            OPERATIONS'}}
+          </p>
+          <h1>{{view==='overview'?'Payout operations':'Payout queue'}}</h1>
+          <p>
+            {{view==='overview'?today:'Review the details. Verify the
+            destination. Release with confidence.'}}
+          </p>
+        </div>
+        <div class="heading-actions">
+          <button class="button" (click)="exportAudit()">
+            <i-lucide [img]="icons.Download" [size]="16" />Export audit</button
+          ><button
+            class="button primary"
+            [disabled]="user.role!=='OPERATIONS'"
+            title="Operations role required"
+            (click)="openModal('create')"
+          >
+            <i-lucide [img]="icons.Plus" [size]="17" />New payout
+          </button>
+        </div>
+      </div>
+      <div class="metrics">
+        <article>
+          <div class="metric-label">
+            Pending payout value<i-lucide [img]="icons.Landmark" [size]="17" />
+          </div>
+          <div class="metric-value">
+            {{compactMoney(total)}}<small>CAD</small>
+          </div>
+          <div class="metric-foot">Across {{activeCount}} open obligations</div>
+        </article>
+        <article>
+          <div class="metric-label">
+            Ready to release<i-lucide [img]="icons.CircleCheck" [size]="17" />
+          </div>
+          <div class="metric-value">
+            {{ready}}<span class="metric-chip success"
+              >Verified & approved</span
+            >
+          </div>
+          <div class="metric-foot">
+            <span class="green-dot"></span>All release controls passed
+          </div>
+        </article>
+        <article>
+          <div class="metric-label">
+            Needs attention<i-lucide [img]="icons.ShieldAlert" [size]="17" />
+          </div>
+          <div class="metric-value">
+            {{holds}}<span class="metric-chip warning">On hold</span>
+          </div>
+          <div class="metric-foot">Independent review required</div>
+        </article>
+        <article>
+          <div class="metric-label">
+            Recorded releases<i-lucide [img]="icons.ArrowUpRight" [size]="17" />
+          </div>
+          <div class="metric-value">
+            {{data.ledger.length}}<small>simulated</small>
+          </div>
+          <div class="metric-foot">Immutable ledger entries</div>
+        </article>
+      </div>
+      @if(holds&&view==='overview'){
+      <div class="attention-strip">
+        <span class="attention-icon"
+          ><i-lucide [img]="icons.ShieldAlert" [size]="19"
+        /></span>
+        <div>
+          <strong
+            >{{holds}} payout{{holds===1?'':'s'}} paused for security
+            review</strong
+          ><span> Resolve outstanding holds before releasing funds.</span>
+        </div>
+        <button (click)="filter='On hold';view='payouts'">
+          <span>Review payouts</span
+          ><i-lucide [img]="icons.ArrowRight" [size]="16" />
+        </button>
+      </div>
+      }
+      <div class="operations-grid" [class.full-width]="view==='payouts'">
+        <section class="queue-section">
+          <div class="section-heading">
+            <div class="heading-line">
+              <h2>Payout queue</h2>
+              <span class="count-badge">{{data.payouts.length}}</span>
+            </div>
+            <span class="live-label"
+              ><span class="green-dot"></span>Live workspace</span
+            >
+          </div>
+          <div class="queue-tabs">
+            <button
+              [class.selected]="filter==='All payouts'"
+              (click)="queueFilter('All payouts')"
+            >
+              All payouts</button
+            ><button
+              [class.selected]="filter==='Ready to release'"
+              (click)="queueFilter('Ready to release')"
+            >
+              Ready <span>{{ready}}</span></button
+            ><button
+              [class.selected]="filter==='On hold'"
+              (click)="queueFilter('On hold')"
+            >
+              On hold <span>{{holds}}</span>
+            </button>
+          </div>
+          <div class="table-tools">
+            <label class="search-input"
+              ><i-lucide [img]="icons.Search" [size]="17" /><input
+                [(ngModel)]="query"
+                placeholder="Search borrower, reference or lender…"
+                aria-label="Search payouts" /></label
+            ><select
+              class="filter-select"
+              [(ngModel)]="filter"
+              aria-label="Filter payout status"
+            >
+              <option>All payouts</option>
+              <option>Needs verification</option>
+              <option>Awaiting approval</option>
+              <option>Ready to release</option>
+              <option>On hold</option>
+              <option>Released</option>
+            </select>
+          </div>
+          <div class="table-scroll">
+            <table class="payout-table">
+              <thead>
+                <tr>
+                  <th>Borrower / reference</th>
+                  <th>Amount <small>CAD</small></th>
+                  <th>Status</th>
+                  <th>Funding</th>
+                  <th><span class="sr-only">Details</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for(p of filtered;track p.id){
+                <tr (click)="openPayout(p.id)">
+                  <td>
+                    <div class="borrower-cell">
+                      <span class="borrower-avatar" [class.warm]="p.hold_active"
+                        >{{initials(p.borrower)}}</span
+                      >
+                      <div>
+                        <button
+                          class="row-link"
+                          (click)="$event.stopPropagation();openPayout(p.id)"
+                        >
+                          {{p.borrower}}</button
+                        ><small>{{p.id}}<span>·</span>v{{p.version}}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="amount-cell">{{money(p.amount_minor)}}</td>
+                  <td>
+                    <span [class]="'status '+tone(p)"
+                      ><span></span>{{status(p)}}</span
+                    >
+                  </td>
+                  <td class="date-cell">{{date(p.deadline)}}</td>
+                  <td><i-lucide [img]="icons.ChevronRight" [size]="15" /></td>
+                </tr>
+                }@empty{
+                <tr>
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <i-lucide [img]="icons.Search" [size]="28" /><strong
+                        >No matching payouts</strong
+                      >
+                      <p>Try another reference or status.</p>
+                      <button
+                        class="text-button"
+                        (click)="query='';filter='All payouts'"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span>{{filtered.length}} of {{data.payouts.length}} payouts</span
+            ><span>All amounts in Canadian dollars</span>
+          </div>
+        </section>
+        @if(view==='overview'){
+        <aside class="activity-panel">
+          <div class="section-heading">
+            <h2>Recent activity</h2>
+            <i-lucide [img]="icons.Activity" [size]="18" />
+          </div>
+          <p class="caption">A clear record of every decision.</p>
+          <div class="timeline">
+            @for(a of data.audit.slice(0,5);track a.id){
+            <div class="timeline-item">
+              <div
+                class="timeline-icon"
+                [class.alert-icon]="a.action.includes('HOLD')"
+              >
+                <i-lucide [img]="eventIcon(a.action)" [size]="16" />
+              </div>
+              <div>
+                <strong>{{nice(a.action)}}</strong
+                ><button
+                  class="activity-reference"
+                  (click)="openPayout(a.payout_id)"
+                >
+                  {{a.payout_id}}
+                </button>
+                <p>{{a.actor_name}}<span> · {{ago(a.created_at)}}</span></p>
+              </div>
+            </div>
+            }
+          </div>
+          <button class="activity-all" (click)="navigate('audit')">
+            View audit trail<i-lucide [img]="icons.ArrowRight" [size]="16" />
+          </button>
+          <div class="integrity-note">
+            <i-lucide [img]="icons.Fingerprint" [size]="26" />
+            <h3>Every release has a record.</h3>
+            <p>
+              Version-bound approvals. Independent reviewers. One release per
+              obligation.
+            </p>
+          </div>
+        </aside>
+        }
+      </div>
+      <div class="system-band">
+        <div>
+          <i-lucide [img]="icons.ShieldCheck" [size]="17" /><span
+            >Server-enforced release controls</span
+          >
+        </div>
+        <div>
+          <i-lucide [img]="icons.LockKeyhole" [size]="16" /><span
+            >Account details masked</span
+          >
+        </div>
+        <div>
+          <span class="green-dot"></span
+          ><span
+            >{{data.pendingJobs===0?'Outbox up to date':data.pendingJobs+'
+            events processing'}}</span
+          >
+        </div>
+      </div>
+      } @else if(view==='investigations'){
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">SECURITY OPERATIONS</p>
+          <h1>Investigations</h1>
+          <p>Evidence first. Clear decisions, with a complete history.</p>
+        </div>
+        <span class="status warning">{{openCases}} open</span>
+      </div>
+      <label class="search-input standalone-search"
+        ><i-lucide [img]="icons.Search" [size]="17" /><input
+          [(ngModel)]="query"
+          placeholder="Search investigations…"
+          aria-label="Search investigations"
+      /></label>
+      <div class="case-list">
+        @for(c of caseRows;track c.id){
+        <article class="case-card">
+          <div class="case-top">
+            <span class="case-symbol"
+              ><i-lucide [img]="icons.ShieldAlert" [size]="23"
+            /></span>
+            <div>
+              <p class="eyebrow">{{c.id}} · {{c.rule_code}}</p>
+              <h2>{{c.title}}</h2>
+            </div>
+            <span [class]="'status '+(c.state==='OPEN'?'warning':'success')"
+              >{{nice(c.state)}}</span
+            >
+          </div>
+          <p>{{c.detail}}</p>
+          <div class="case-meta">
+            <span>{{c.borrower}}</span><strong>{{money(c.amount_minor)}}</strong
+            ><span>{{date(c.created_at)}} · {{time(c.created_at)}}</span>
+          </div>
+          @if(c.resolution){
+          <div class="evidence">{{c.resolution}}</div>
+          }
+          <div class="case-actions">
+            <button class="button" (click)="openPayout(c.payout_id)">
+              Open {{c.payout_id}}<i-lucide
+                [img]="icons.ArrowUpRight"
+                [size]="16"
+              /></button
+            >@if(c.state==='OPEN'&&user.role==='SECURITY'){<button
+              class="button primary"
+              (click)="selectedCase=c.id;openModal('resolve')"
+            >
+              Resolve case</button
+            >}
+          </div>
+        </article>
+        }@empty{
+        <div class="empty-state">
+          <i-lucide [img]="icons.ShieldCheck" [size]="36" />
+          <h2>No investigations found</h2>
+          <p>Your queue is clear for the selected search.</p>
+        </div>
+        }
+      </div>
+      } @else if(view==='ledger'){
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">PAYMENT INTEGRITY</p>
+          <h1>Release ledger</h1>
+          <p>
+            Committed simulations. One immutable entry per payout obligation.
+          </p>
+        </div>
+        <span class="environment">NO REAL FUNDS MOVED</span>
+      </div>
+      <label class="search-input standalone-search"
+        ><i-lucide [img]="icons.Search" [size]="17" /><input
+          [(ngModel)]="query"
+          placeholder="Search ledger reference…"
+          aria-label="Search ledger"
+      /></label>
+      <div class="table-scroll bordered-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Ledger reference</th>
+              <th>Borrower</th>
+              <th>Amount · CAD</th>
+              <th>Destination</th>
+              <th>Recorded</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(l of ledgerRows;track l.id){
+            <tr>
+              <td>
+                <button class="row-link mono" (click)="openPayout(l.payout_id)">
+                  {{l.id}}</button
+                ><small>{{l.payout_id}} · v{{l.instruction_version}}</small>
+              </td>
+              <td>{{l.borrower}}</td>
+              <td class="amount-cell">{{money(l.amount_minor)}}</td>
+              <td class="mono">{{l.account}}</td>
+              <td>{{date(l.created_at)}} {{time(l.created_at)}}</td>
+            </tr>
+            }@empty{
+            <tr>
+              <td colspan="5">
+                <div class="empty-state tall">
+                  <div class="empty-icon">
+                    <i-lucide [img]="icons.Landmark" [size]="30" />
+                  </div>
+                  <h2>No releases recorded yet</h2>
+                  <p>
+                    Verified, approved payouts appear here after a simulated
+                    release.
+                  </p>
+                  <button
+                    class="button"
+                    (click)="navigate('payouts');filter='Ready to release'"
+                  >
+                    View ready payouts<i-lucide
+                      [img]="icons.ArrowRight"
+                      [size]="16"
+                    />
+                  </button>
+                </div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      } @else if(view==='audit'){
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">ACCOUNTABILITY</p>
+          <h1>Audit trail</h1>
+          <p>Who acted, what changed, and why. Latest 200 events.</p>
+        </div>
+        <button class="button" (click)="exportAudit()">
+          <i-lucide [img]="icons.Download" [size]="17" />Export CSV
+        </button>
+      </div>
+      <label class="search-input standalone-search"
+        ><i-lucide [img]="icons.Search" [size]="17" /><input
+          [(ngModel)]="query"
+          placeholder="Search actor, action or reference…"
+          aria-label="Search audit trail"
+      /></label>
+      <div class="table-scroll bordered-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Actor</th>
+              <th>Reference</th>
+              <th>Details</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for(a of auditRows;track a.id){
+            <tr>
+              <td>
+                <span class="audit-action"
+                  ><i-lucide
+                    [img]="eventIcon(a.action)"
+                    [size]="16"
+                  />{{nice(a.action)}}</span
+                >
+              </td>
+              <td>{{a.actor_name}}</td>
+              <td>
+                <button class="row-link mono" (click)="openPayout(a.payout_id)">
+                  {{a.payout_id}}
+                </button>
+              </td>
+              <td class="audit-detail">{{a.detail}}</td>
+              <td class="nowrap">
+                {{time(a.created_at)}}<small>{{date(a.created_at)}}</small>
+              </td>
+            </tr>
+            }@empty{
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">No events match your search.</div>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      } @else if(view==='contacts'){
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">VERIFICATION SOURCES</p>
+          <h1>Trusted contacts</h1>
+          <p>Established channels for independent payout verification.</p>
+        </div>
+        <span class="status neutral">Seeded demo registry</span>
+      </div>
+      <div class="contact-grid">
+        @for(c of data.contacts;track c.id){
+        <article class="contact-card">
+          <div class="contact-symbol">
+            <i-lucide [img]="icons.Landmark" [size]="25" />
+          </div>
+          <h2>{{c.institution}}</h2>
+          <p>{{c.name}}</p>
+          <strong>{{c.channel}}</strong>
+          <div class="contact-footer">
+            <span class="status success"><span></span>Active</span
+            ><span>Version {{c.version}}</span>
+          </div>
+          <p class="caption">{{c.provenance}}</p>
+        </article>
+        }
+      </div>
+      <div class="plain-note">
+        <i-lucide [img]="icons.CircleHelp" [size]="18" /><span
+          >These are fictional contacts. No real institution or account
+          ownership has been verified.</span
+        >
+      </div>
+      } @else {
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">SYSTEM ASSURANCE</p>
+          <h1>Control center</h1>
+          <p>Implemented safeguards and explicit simulation boundaries.</p>
+        </div>
+        <span class="version-tag">v1.0 · Portfolio build</span>
+      </div>
+      <section class="controls-list">
+        @for(c of [{title:'Independent review',detail:'Separate preparation,
+        verification and approval
+        identities.',value:'Enforced'},{title:'Approval
+        validity',detail:'Approval is bound to the current instructions and
+        contact version.',value:'30 minutes'},{title:'Verification
+        validity',detail:'Release checks the age of verification evidence
+        again.',value:'24 hours'},{title:'Duplicate-release
+        protection',detail:'Database uniqueness plus request
+        idempotency.',value:'Enforced'},{title:'Payment limit',detail:'CAD only.
+        One full payout per obligation.',value:'$1,000,000'},{title:'Evidence
+        retention',detail:'Database triggers prevent normal updates to versions,
+        audit and ledger.',value:'Append-only'},{title:'Background
+        outbox',detail:'Durable local notifications; no external email or
+        SMS.',value:data.pendingJobs+' pending'}];track c.title){
+        <div>
+          <span class="control-icon"
+            ><i-lucide [img]="icons.ShieldCheck" [size]="19"
+          /></span>
+          <section>
+            <h2>{{c.title}}</h2>
+            <p>{{c.detail}}</p>
+          </section>
+          <strong>{{c.value}}</strong>
+        </div>
+        }
+      </section>
+      <div class="plain-note">
+        <i-lucide [img]="icons.CircleAlert" [size]="18" /><span
+          >Document uploads, live bank verification, real payments and
+          production identity integrations are not enabled in this build.</span
+        >
+      </div>
+      }
+    </main>
+    <footer class="app-footer">
+      <span
+        >FundingGuard <span class="dot-separator">/</span> Mortgage payment
+        integrity</span
+      ><span>Synthetic data · Local-first sandbox</span>
+    </footer>
+  </div>
+</div>
+@if(accountMenu){
+<div class="account-popover">
+  <p class="eyebrow">SWITCH DEMO IDENTITY</p>
+  @for(a of accounts;track a.email){<button (click)="switchAccount(a.email)">
+    <span class="avatar small">{{a.initials}}</span
+    ><span><strong>{{a.name}}</strong><small>{{a.role}}</small></span
+    >@if(user.email===a.email){<i-lucide
+      [img]="icons.Check"
+      [size]="15"
+    />}</button
+  >}<button class="logout" (click)="logout()">
+    <i-lucide [img]="icons.LogOut" [size]="16" />Sign out
+  </button>
+</div>
+} @if(notices){
+<div class="notifications-popover">
+  <div class="section-heading">
+    <h2>Notifications</h2>
+    <button
+      class="icon-button"
+      (click)="notices=false"
+      aria-label="Close notifications"
+    >
+      <i-lucide [img]="icons.X" [size]="16" />
+    </button>
+  </div>
+  @for(n of data.notifications;track n.id){
+  <article>
+    <strong>{{nice(n.title)}}</strong>
+    <p>{{n.detail}}</p>
+    <small>{{ago(n.created_at)}}</small>
+  </article>
+  }@empty{
+  <p class="muted">No notifications yet.</p>
+  }
+</div>
+} @if(modal){
+<div class="modal-backdrop" (click)="!busy&&(modal='')">
+  <section
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="modal-heading">
+      <div>
+        <p class="eyebrow">
+          {{modal==='create'?'MORTGAGE OPERATIONS':selectedId}}
+        </p>
+        <h2 id="modal-title">{{modalTitle}}</h2>
+      </div>
+      <button
+        class="icon-button"
+        [disabled]="busy"
+        (click)="modal=''"
+        aria-label="Close dialog"
+      >
+        <i-lucide [img]="icons.X" [size]="21" />
+      </button>
+    </div>
+    <form (ngSubmit)="submit()">
+      @if(modal==='create'){
+      <div class="form-grid">
+        <label
+          >Borrower name<input
+            name="borrower"
+            [(ngModel)]="form.borrower"
+            required
+            maxlength="100"
+            placeholder="Synthetic borrower name" /></label
+        ><label
+          >Existing loan reference<input
+            name="loan"
+            [(ngModel)]="form.loanReference"
+            required
+            maxlength="80"
+            placeholder="DEMO-LOAN-1050" /></label
+        ><label class="span-2"
+          >Property address<input
+            name="property"
+            [(ngModel)]="form.property"
+            required
+            maxlength="200"
+            placeholder="Synthetic property address" /></label
+        ><label class="span-2"
+          >Receiving institution<select
+            name="contact"
+            [(ngModel)]="form.contactId"
+          >
+            @for(c of data.contacts;track c.id){
+            <option [value]="c.id">{{c.institution}}</option>
+            }
+          </select></label
+        ><label
+          >Amount · CAD<input
+            name="amount"
+            [(ngModel)]="form.amount"
+            inputmode="decimal"
+            required
+            placeholder="450000.00" /></label
+        ><label
+          >Funding date<input
+            name="date"
+            type="date"
+            [(ngModel)]="form.deadline"
+            required /></label
+        ><label class="span-2"
+          >Synthetic receiving account<input
+            name="account"
+            [(ngModel)]="form.account"
+            inputmode="numeric"
+            required
+            pattern="[0-9]{6,18}"
+            placeholder="6–18 digits; no real account information"
+        /></label>
+      </div>
+      } @if(modal==='revise'){
+      <div class="modal-warning">
+        <i-lucide [img]="icons.CircleAlert" [size]="19" /><span
+          >A new version invalidates the current verification and
+          approval.</span
+        >
+      </div>
+      <label
+        >Amount · CAD<input
+          name="amount"
+          [(ngModel)]="actionAmount"
+          inputmode="decimal"
+          required /></label
+      ><label
+        >New synthetic account<input
+          name="account"
+          [(ngModel)]="actionAccount"
+          inputmode="numeric"
+          required
+          pattern="[0-9]{6,18}"
+          placeholder="Enter the full synthetic account" /></label
+      >} @if(modal==='verify'){
+      <div class="verification-contact">
+        <i-lucide [img]="icons.Landmark" [size]="20" />
+        <div>
+          <strong>{{detail.payout.contact_name}}</strong>
+          <p>
+            {{detail.payout.contact_channel}} · Contact
+            v{{detail.payout.contact_version}}
+          </p>
+        </div>
+      </div>
+      <p class="caption">
+        Use the established channel. A number from replacement instructions is
+        not independent verification.
+      </p>
+      } @if(['approve','release'].includes(modal)){
+      <div class="review-summary">
+        <span>{{detail.payout.borrower}}</span
+        ><strong>{{money(detail.payout.amount_minor)}} CAD</strong>
+        <p>{{detail.payout.lender}}</p>
+        <p class="mono">
+          Account {{detail.payout.account}} · Instructions
+          v{{detail.payout.version}}
+        </p>
+      </div>
+      <label class="checkbox-label"
+        ><input
+          type="checkbox"
+          name="confirm"
+          [(ngModel)]="confirmation"
+          required
+        /><span
+          >I reviewed the current amount, recipient and instruction version.
+          This action uses synthetic data only.</span
+        ></label
+      >@if(modal==='release'){
+      <p class="caption">
+        This records a local ledger entry. It cannot send money to a bank.
+      </p>
+      }} @if(!['create','approve','release'].includes(modal)){<label
+        >{{modal==='verify'||modal==='confirm'?'Evidence and independent
+        checks':'Reason and supporting evidence'}}<textarea
+          name="reason"
+          [(ngModel)]="actionReason"
+          required
+          minlength="12"
+          maxlength="600"
+          rows="4"
+          placeholder="Describe what was checked and the basis for this decision…"
+        ></textarea></label
+      >} @if(error){
+      <div class="form-error" role="alert">{{error}}</div>
+      }
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="button"
+          [disabled]="busy"
+          (click)="modal=''"
+        >
+          Cancel</button
+        ><button type="submit" class="button primary" [disabled]="busy">
+          {{busy?'Saving…':modal==='create'?'Create
+          payout':modal==='release'?'Confirm simulation':'Save
+          decision'}}<i-lucide [img]="icons.ArrowRight" [size]="16" />
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+} } @if(toast){
+<div class="toast" role="status">
+  <i-lucide [img]="icons.CircleCheck" [size]="19" />{{toast}}<button
+    class="icon-button"
+    (click)="toast=''"
+    aria-label="Dismiss notification"
+  >
+    <i-lucide [img]="icons.X" [size]="16" />
+  </button>
+</div>
 }
-@if(toast){<div class="toast" role="status"><i-lucide [img]="icons.CircleCheck" [size]="19" />{{toast}}<button class="icon-button" (click)="toast=''" aria-label="Dismiss notification"><i-lucide [img]="icons.X" [size]="16" /></button></div>}
