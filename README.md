@@ -98,6 +98,8 @@ Verification expires after **24 hours**; approval after **30 minutes**. Receipt 
 
 ## Quick start
 
+For a hosted portfolio demo, follow the [Render + Neon deployment guide](docs/HOSTING.md). The deployment-only Dockerfile runs on Render; local preview instructions below still require no Docker installation.
+
 ### Prerequisites
 
 - Node.js **22.12+ within the 22.x line**, npm, Java **21**, and Maven **3.9+**

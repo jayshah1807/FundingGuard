@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OutboxWorker {
     final JdbcTemplate db;
     public OutboxWorker(JdbcTemplate db){this.db=db;}
-    @Scheduled(fixedDelay=2000)
+    @Scheduled(fixedDelayString="${fundingguard.outbox.delay-ms:2000}", initialDelayString="${fundingguard.outbox.initial-delay-ms:0}")
     @Transactional
     public void process(){
         var jobs=db.queryForList("select * from fg_outbox where processed_at is null order by id limit 30 for update skip locked");
