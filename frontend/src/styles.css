@@ -1395,6 +1395,8 @@ td small {
   gap: 20px;
 }
 .case-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: white;
@@ -1408,6 +1410,10 @@ td small {
 }
 .case-top > .status {
   margin-left: auto;
+  flex-shrink: 0;
+}
+.case-top > div {
+  min-width: 0;
 }
 .case-symbol {
   width: 39px;
@@ -1441,11 +1447,17 @@ td small {
 }
 .case-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   border-top: 1px solid var(--line);
   margin-top: 24px;
   padding-top: 18px;
+}
+.case-actions .button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .bordered-table {
   border: 1px solid var(--line);

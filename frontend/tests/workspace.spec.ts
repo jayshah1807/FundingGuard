@@ -62,8 +62,9 @@ test("search filters and clears the payout queue", async ({ page }) => {
 test("held payout has a disabled release action", async ({ page }) => {
   await login(page);
   await page
-    .getByRole("button", { name: "FG-1042", exact: true })
-    .first()
+    .getByRole("row")
+    .filter({ hasText: "FG-1042" })
+    .getByRole("button", { name: "Samira Malik", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Release simulation", exact: true }),
