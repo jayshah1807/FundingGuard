@@ -780,6 +780,36 @@
         </div>
         }
       </div>
+      } @else if(view==='automation'){
+      <div class="page-heading"><div><p class="eyebrow">DETECTION & RESPONSE</p><h1>Security automation</h1><p>Policy COR-01 · Version 1 · 15-minute correlation window</p></div><span class="status success">Policy active</span></div>
+      <div class="automation-policy"><i-lucide [img]="icons.ShieldCheck" [size]="24" /><div><strong>Account change + reported login or contact risk</strong><p>Correlate evidence → Open case → Enforce protective hold → Queue notification</p></div><span class="badge-outline">DETERMINISTIC RULE</span></div>
+      @if(user.role==='SECURITY'){
+      <section class="automation-section"><div class="section-heading"><h2>Scenario replay</h2><span class="muted">Synthetic records · Isolated payout per run</span></div>
+        <div class="scenario-actions">
+          <button class="button" [disabled]="busy" (click)="replayScenario('BENIGN')"><i-lucide [img]="icons.CircleCheck" [size]="17" />Benign change</button>
+          <button class="button" [disabled]="busy" (click)="replayScenario('CORRELATED')"><i-lucide [img]="icons.ShieldAlert" [size]="17" />Correlated risk</button>
+          <button class="button" [disabled]="busy" (click)="replayScenario('OUTSIDE_WINDOW')"><i-lucide [img]="icons.Clock3" [size]="17" />Outside window</button>
+        </div>
+      </section>
+      <details class="signal-entry"><summary>Submit simulated signal</summary><form class="signal-form" (ngSubmit)="ingestSignal()">
+        <label>Payout<select name="signalPayout" [(ngModel)]="signal.payoutId" (ngModelChange)="signalKey=''" required><option value="">Select payout</option>@for(p of signalPayouts;track p.id){<option [value]="p.id">{{p.borrower}} · v{{p.version}}</option>}</select></label>
+        <label>Signal<select name="signalKind" [(ngModel)]="signal.kind" (ngModelChange)="signalKey=''"><option value="LOGIN_ANOMALY">Reported login anomaly</option><option value="CONTACT_CHANGE_REPORTED">Reported contact change</option><option value="NORMAL_LOGIN">Normal login</option></select></label>
+        <label>Evidence note<input name="signalNote" [(ngModel)]="signal.detail" (ngModelChange)="signalKey=''" minlength="8" maxlength="500" required /></label>
+        <button class="button primary" type="submit" [disabled]="busy"><i-lucide [img]="icons.Send" [size]="16" />Submit signal</button>
+      </form></details>
+      }
+      <section class="automation-section">
+        <div class="automation-toolbar"><div class="automation-tabs" role="tablist" aria-label="Automation records">@for(t of ['runs','events','scenarios'];track t){<button role="tab" [attr.aria-selected]="automationTab===t" [class.active]="automationTab===t" (click)="automationTab=t;query=''">{{t==='runs'?'Playbook runs':t==='events'?'Event stream':'Replay results'}} <span>{{automation[t].length}}</span></button>}</div><label class="automation-search"><i-lucide [img]="icons.Search" [size]="16" /><input aria-label="Search automation records" [(ngModel)]="query" placeholder="Search records" /></label></div>
+        @if(automationLoading){<p class="muted" role="status">Loading automation records…</p>}
+        <div class="table-scroll"><table class="automation-table"><thead><tr><th>Time</th><th>{{automationTab==='runs'?'Rule':automationTab==='events'?'Signal':'Scenario'}}</th><th>Payout</th><th>{{automationTab==='events'?'Source':'Outcome'}}</th><th>{{automationTab==='scenarios'?'Processing':'Evidence'}}</th></tr></thead><tbody>
+          @for(r of automationRows;track r.id){<tr><td>{{date(r.created_at||r.received_at)}} {{time(r.created_at||r.received_at)}}</td><td>{{nice(r.rule_code||r.kind||r.scenario)}}</td><td><button class="text-button" (click)="openPayout(r.payout_id)">{{r.payout_id.slice(0,12)}}</button></td><td>@if(automationTab==='scenarios'){<span class="status" [class.success]="r.expected_hold===r.observed_hold">{{r.expected_hold===r.observed_hold?'Passed':'Mismatch'}} · {{r.observed_hold?'Held':'No hold'}}</span>}@else{<span class="status neutral">{{nice(r.status||r.source)}}</span>}</td><td>@if(automationTab==='runs'){<button class="button" (click)="openRun(r.id)">Inspect run <i-lucide [img]="icons.ArrowUpRight" [size]="15" /></button>}@else if(automationTab==='events'){<span>{{r.detail}}</span>}@else{ {{r.duration_ms}} ms }</td></tr>}
+          @empty{<tr><td colspan="5" class="automation-empty">{{query?'No matching records.':'No records yet.'}}</td></tr>}
+        </tbody></table></div>
+      </section>
+      @if(runDetail){<section class="automation-section run-inspector"><div class="section-heading"><div><p class="eyebrow">{{runDetail.run.rule_code}} · RULE VERSION {{runDetail.run.rule_version}}</p><h2>Investigation evidence</h2></div><button class="icon-button" title="Close inspection" (click)="runDetail=null"><i-lucide [img]="icons.X" [size]="18" /></button></div><p class="run-summary">{{runDetail.run.summary}}</p>
+        <h3>Playbook actions</h3><ol class="playbook-steps">@for(s of runDetail.steps;track s.sequence){<li><i-lucide [img]="s.outcome==='SKIPPED'?icons.CircleAlert:icons.CheckCheck" [size]="18" /><div><strong>{{nice(s.action)}} <span class="muted">· {{nice(s.outcome)}}</span></strong><p>{{s.detail}}</p></div></li>}</ol>
+        <h3>Correlated timeline</h3><ol class="playbook-steps">@for(e of runDetail.evidence;track e.id){<li><i-lucide [img]="icons.FileClock" [size]="18" /><div><strong>{{time(e.occurred_at)}} · {{nice(e.kind)}} · v{{e.instruction_version}}</strong><p>{{e.detail}}</p><small>{{nice(e.source)}} · {{e.id}}</small></div></li>}</ol>
+      </section>}
       } @else if(view==='ledger'){
       <div class="page-heading">
         <div>

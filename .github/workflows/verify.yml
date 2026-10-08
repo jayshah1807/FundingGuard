@@ -1,58 +1,91 @@
 name: Verify FundingGuard
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: 'false'
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-disposable-only
+          POSTGRES_DB: fundingguard
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: jdbc:postgresql://localhost:5432/fundingguard
+      TEST_DATABASE_USER: postgres
+      TEST_DATABASE_PASSWORD: ci-disposable-only
+      TEST_POOL_SIZE: '4'
+      TEST_FLYWAY: 'true'
+      REAL_POSTGRES: 'true'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: |
             package-lock.json
             frontend/package-lock.json
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
       - run: npm ci
+      - run: npm audit --audit-level=high
       - run: npm ci
+        working-directory: frontend
+      - run: npm audit --audit-level=high
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
-      - name: Test against disposable PGlite
+      - run: mvn -B -f backend/pom.xml verify
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Browser integration tests
         shell: bash
+        env:
+          DATABASE_URL: jdbc:postgresql://localhost:5432/fundingguard
+          DATABASE_USER: postgres
+          DATABASE_PASSWORD: ci-disposable-only
+          SEED_DEMO: 'true'
+          DEMO_PASSWORD: Test-Only-Password-2026!
+          PORT: '8088'
         run: |
           mkdir -p .runtime
-          node scripts/preview-db.mjs --test > .runtime/test-database.log 2>&1 &
-          DB_PID=$!
-          trap 'kill "$DB_PID" 2>/dev/null || true' EXIT
-          node --input-type=module <<'JS'
-          import { createConnection } from 'node:net';
-          const ready = () => new Promise(resolve => {
-            const socket = createConnection({host: '127.0.0.1', port: 55439});
-            socket.setTimeout(1000);
-            socket.once('connect', () => { socket.destroy(); resolve(true); });
-            socket.once('error', () => { socket.destroy(); resolve(false); });
-            socket.once('timeout', () => { socket.destroy(); resolve(false); });
-          });
-          let started = false;
-          for (let i = 0; i < 60; i++) {
-            if (await ready()) { started = true; break; }
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-          if (!started) throw new Error('Test database did not start');
-          JS
-          mvn -B -f backend/pom.xml verify
-        env:
-          TEST_DATABASE_URL: jdbc:postgresql://127.0.0.1:55439/postgres?sslmode=disable&preferQueryMode=simple
-          TEST_DATABASE_USER: postgres
-          TEST_DATABASE_PASSWORD: ''
-          TEST_POOL_SIZE: '1'
-          TEST_FLYWAY: 'false'
-          REAL_POSTGRES: 'false'
+          java -jar backend/target/fundingguard-1.0.0.jar > .runtime/ci-app.log 2>&1 &
+          APP_PID=$!
+          trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8088/api/csrf >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8088/api/csrf >/dev/null
+          cd frontend
+          npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-evidence
+          path: |
+            backend/target/surefire-reports/
+            backend/target/detection-evaluation.json
+            frontend/playwright-report/
+            frontend/test-results/

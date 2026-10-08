@@ -1,6 +1,6 @@
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
-import { readFile, mkdir } from "node:fs/promises";
+import { readFile, mkdir, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
 
 const test = process.argv.includes("--test");
@@ -27,6 +27,21 @@ if (!previous.rows.length) {
   await db.transaction(async (tx) => {
     await tx.exec(schema);
     await tx.query("INSERT INTO preview_schema VALUES ($1)", [hash]);
+  });
+}
+// Keep existing V1 previews intact and apply later migrations exactly once.
+await db.exec("CREATE TABLE IF NOT EXISTS preview_migrations (name text PRIMARY KEY, hash text NOT NULL)");
+const migrationDir = "backend/src/main/resources/db/migration";
+const migrations = (await readdir(migrationDir)).filter(n => /^V\d+__.*\.sql$/.test(n) && !n.startsWith("V1__"))
+  .sort((a,b) => Number(a.match(/^V(\d+)/)[1])-Number(b.match(/^V(\d+)/)[1]));
+for (const name of migrations) {
+  const sql = await readFile(`${migrationDir}/${name}`, "utf8");
+  const checksum = createHash("sha256").update(sql).digest("hex");
+  const applied = await db.query("SELECT hash FROM preview_migrations WHERE name=$1", [name]);
+  if (applied.rows.length && applied.rows[0].hash !== checksum) throw new Error(`Applied migration changed: ${name}`);
+  if (!applied.rows.length) await db.transaction(async tx => {
+    await tx.exec(sql);
+    await tx.query("INSERT INTO preview_migrations VALUES ($1,$2)", [name,checksum]);
   });
 }
 const server = new PGLiteSocketServer({

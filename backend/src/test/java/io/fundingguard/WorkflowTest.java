@@ -30,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     "spring.datasource.username=${TEST_DATABASE_USER:postgres}", "spring.datasource.password=${TEST_DATABASE_PASSWORD:}",
     "spring.datasource.hikari.maximum-pool-size=${TEST_POOL_SIZE:1}", "spring.flyway.enabled=${TEST_FLYWAY:false}"})
 @AutoConfigureMockMvc
+@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
 class WorkflowTest {
 
     @Autowired

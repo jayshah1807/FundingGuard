@@ -99,6 +99,7 @@ export class AppComponent implements OnInit {
     { id: "overview", label: "Overview", icon: LayoutDashboard },
     { id: "payouts", label: "Payout queue", icon: ListChecks },
     { id: "investigations", label: "Investigations", icon: ShieldAlert },
+    { id: "automation", label: "Security automation", icon: Activity },
     { id: "ledger", label: "Release ledger", icon: Landmark },
     { id: "audit", label: "Audit trail", icon: FileClock },
     { id: "contacts", label: "Trusted contacts", icon: Users },
@@ -169,6 +170,50 @@ export class AppComponent implements OnInit {
   releaseKey = "";
   confirmationType = "receipt";
   selectedCase = "";
+  automation: any = { events: [], runs: [], scenarios: [] };
+  automationLoading = false;
+  runDetail: any = null;
+  automationTab = "runs";
+  signal: any = { payoutId: "", kind: "LOGIN_ANOMALY", detail: "" };
+  signalKey = "";
+  async loadAutomation() {
+    this.automationLoading = true;
+    try { this.automation = await this.api("/automation"); }
+    catch (e: any) { this.error = e.message; }
+    finally { this.automationLoading = false; }
+  }
+  get signalPayouts() { return this.data.payouts.filter((p: any) => !["RELEASED_SIMULATED", "CLOSED", "CANCELLED"].includes(p.state)); }
+  get automationRows() {
+    return this.automation[this.automationTab].filter((r: any) =>
+      JSON.stringify(r).toLowerCase().includes(this.query.toLowerCase()));
+  }
+  async openRun(id: string) {
+    try { this.runDetail = await this.api("/automation/runs/" + id); }
+    catch (e: any) { this.error = e.message; }
+  }
+  async replayScenario(scenario: string) {
+    this.busy = true; this.error = "";
+    try {
+      const r = await this.api("/automation/replay", "POST", { scenario });
+      await this.refresh();
+      this.automationTab = "scenarios";
+      this.notify(r.passed ? "Scenario passed. Evidence and outcome recorded." : "Scenario result differed from expectation.");
+    } catch (e: any) { this.error = e.message; }
+    finally { this.busy = false; }
+  }
+  async ingestSignal() {
+    const payout = this.data.payouts.find((p: any) => p.id === this.signal.payoutId);
+    if (!payout) { this.error = "Select a payout."; return; }
+    this.busy = true; this.error = "";
+    this.signalKey ||= crypto.randomUUID();
+    try {
+      await this.api("/automation/events", "POST", { ...this.signal, version: payout.version, eventKey: this.signalKey });
+      this.signalKey = ""; this.signal.detail = "";
+      await this.refresh(); this.automationTab = "events";
+      this.notify("Signal recorded and correlation evaluated.");
+    } catch (e: any) { this.error = e.message; }
+    finally { this.busy = false; }
+  }
   form: any = {
     borrower: "",
     property: "",
@@ -196,6 +241,7 @@ export class AppComponent implements OnInit {
       this.view = h;
       this.detail = null;
       this.selectedId = "";
+      if (h === "automation" && this.user) this.loadAutomation();
     }
   }
   @HostListener("document:keydown.escape") escape() {
@@ -298,6 +344,8 @@ export class AppComponent implements OnInit {
         notifications: [],
       };
       this.detail = null;
+      this.automation = { events: [], runs: [], scenarios: [] };
+      this.runDetail = null;
       this.accountMenu = false;
       await this.token();
     }
@@ -313,6 +361,7 @@ export class AppComponent implements OnInit {
       this.data = await this.api("/workspace");
       this.user = this.data.user;
       if (this.selectedId) await this.loadDetail(this.selectedId);
+      if (this.view === "automation") await this.loadAutomation();
     } catch (e: any) {
       this.error = e.message;
     }
@@ -335,6 +384,7 @@ export class AppComponent implements OnInit {
     this.filter = "All payouts";
     this.mobileNav = false;
     location.hash = view;
+    if (view === "automation") this.loadAutomation();
     window.scrollTo(0, 0);
   }
   openPayout(id: string) {

@@ -2,6 +2,7 @@ package io.fundingguard;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -14,6 +15,17 @@ import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
 @Configuration
 public class SecurityConfig {
+
+    // Only this machine endpoint uses HMAC instead of browser sessions and CSRF.
+    @Bean
+    @Order(1)
+    SecurityFilterChain machineChain(HttpSecurity http) throws Exception {
+        http.securityMatcher(SignedIntake.PATH)
+            .csrf(c -> c.disable())
+            .sessionManagement(s -> s.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(a -> a.requestMatchers(org.springframework.http.HttpMethod.POST, SignedIntake.PATH).permitAll().anyRequest().denyAll());
+        return http.build();
+    }
 
     @Bean
     PasswordEncoder passwordEncoder() {

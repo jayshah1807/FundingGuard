@@ -11,9 +11,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class WorkflowService {
 
     final JdbcTemplate db;
+    final AutomationEngine automation;
 
-    public WorkflowService(JdbcTemplate db) {
+    public WorkflowService(JdbcTemplate db, AutomationEngine automation) {
         this.db = db;
+        this.automation = automation;
     }
 
     public record Actor(String id, String tenant, String name, String role, String email) {
@@ -173,6 +175,7 @@ public class WorkflowService {
         audit(a, id, "INSTRUCTIONS_REVISED", "Version " + next + " replaces v" + v + ". Prior verification and approval invalidated. " + reason);
         caseFor(a, id, "DR-01", "Payment instructions changed", "A new instruction version requires independent verification. This is a review signal, not proof of fraud.");
         event(a, id, "INSTRUCTIONS_REVISED");
+        automation.instructionChanged(a, id, next, !account.equals(p.get("account")));
     }
 
     @Transactional

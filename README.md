@@ -18,6 +18,23 @@ A mortgage operations team is preparing a CAD 425,000 payout. Shortly before fun
 
 FundingGuard asks a narrower, more defensible question than "Is this fraud?": **Are the current instructions independently verified, currently approved, and eligible for release?**
 
+## Security automation
+
+The **Security automation** workspace adds normalized synthetic event ingestion, a versioned correlation rule, automatic protective holds, captured investigation evidence and an inspectable response playbook. Sign in as Security to replay benign, correlated-risk and out-of-window scenarios. Release authorization remains independent.
+
+COR-01 correlates a current receiving-account change with a reported login anomaly or contact change within 15 minutes. It opens a case, enforces a hold on active payouts, records the actions and queues an in-app notification. Summaries are evidence-based templates, not AI-generated fraud assessments.
+
+See [automation behavior, API, replay and limitations](docs/AUTOMATION.md). Existing architecture images below show the baseline application, before this extension.
+
+### Security evidence
+
+- [Threat model](docs/THREAT-MODEL.md): trust boundaries, controls, tests and residual risks.
+- [Signed simulator intake](docs/SIGNED-INTAKE.md): HMAC authentication, replay protection and key rotation; disabled by default.
+- [Labelled detection evaluation](docs/EVALUATION.md): ten synthetic scenarios, including three missed threats and one unnecessary hold. Not real-world accuracy.
+- [Operations and verification](docs/OPERATIONS.md): CI, dependency remediation, migration and recovery procedures.
+
+The CI workflow now targets native PostgreSQL and browser integration tests, with secret scanning and dependency checks. Configuration is not proof of a successful hosted run; inspect the run artifacts after pushing.
+
 | Operational risk | Implemented response |
 |---|---|
 | Old approval reused after an account change | New instruction version; previous verification and approval invalidated |
@@ -195,9 +212,9 @@ For another port, use `BASE_URL=http://127.0.0.1:8092 npx playwright test`. Supp
 
 ## Boundaries
 
-**Implemented:** role and tenant checks, CSRF protection, masked account responses, integer-cent amounts, versioning, expiring reviews, holds, case resolution, audit export, idempotent simulated release and local notifications.
+**Implemented:** role and tenant checks, CSRF protection, masked account responses, integer-cent amounts, versioning, expiring reviews, holds, case resolution, audit export, idempotent simulated release, in-app notifications, synthetic event ingestion, bounded rule correlation, a transactional protective-response playbook, and scenario replay.
 
-**Not implemented:** real payments or bank verification; actual callbacks; external SIEM/SOAR; threat hunting or fraud classification; evidence uploads; SSO/MFA; production account management; distributed delivery; operational monitoring; load-tested capacity or compliance certification.
+**Not implemented:** real payments or bank verification; actual callbacks; external SIEM/SOAR integrations; threat hunting or AI fraud classification; evidence uploads; SSO/MFA; production account management; distributed delivery; operational monitoring; load-tested capacity or compliance certification.
 
 This is an **AI-assisted portfolio project** demonstrating inspectable control logic, not a replacement for a lender's payment, fraud or security platform. Do not expose demo credentials or the preview database on the public internet.
 

@@ -1,0 +1,12 @@
+[
+ {"name":"ordinary-login","malicious":false,"change":"none","kind":"NORMAL_LOGIN","age":60,"expectedHold":false},
+ {"name":"legitimate-account-change","malicious":false,"change":"account","kind":"NORMAL_LOGIN","age":60,"expectedHold":false},
+ {"name":"account-change-and-login-risk","malicious":true,"change":"account","kind":"LOGIN_ANOMALY","age":60,"expectedHold":true},
+ {"name":"account-change-and-contact-risk","malicious":true,"change":"account","kind":"CONTACT_CHANGE_REPORTED","age":60,"expectedHold":true},
+ {"name":"attacker-waits-out-window","malicious":true,"change":"account","kind":"LOGIN_ANOMALY","age":960,"expectedHold":false},
+ {"name":"insider-without-login-risk","malicious":true,"change":"account","kind":"NORMAL_LOGIN","age":60,"expectedHold":false},
+ {"name":"legitimate-change-with-unusual-login","malicious":false,"change":"account","kind":"LOGIN_ANOMALY","age":60,"expectedHold":true},
+ {"name":"legitimate-amount-correction","malicious":false,"change":"amount","kind":"LOGIN_ANOMALY","age":60,"expectedHold":false},
+ {"name":"compromise-without-account-change","malicious":true,"change":"none","kind":"LOGIN_ANOMALY","age":60,"expectedHold":false},
+ {"name":"old-risk-and-legitimate-change","malicious":false,"change":"account","kind":"CONTACT_CHANGE_REPORTED","age":960,"expectedHold":false}
+]

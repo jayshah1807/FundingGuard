@@ -26,10 +26,12 @@ public class ApiController {
 
     final WorkflowService service;
     final JdbcTemplate db;
+    final AutomationEngine engine;
 
-    public ApiController(WorkflowService service, JdbcTemplate db) {
+    public ApiController(WorkflowService service, JdbcTemplate db, AutomationEngine engine) {
         this.service = service;
         this.db = db;
+        this.engine = engine;
     }
 
     WorkflowService.Actor actor(Principal p) {
@@ -40,6 +42,19 @@ public class ApiController {
     public Map<String, String> csrf(CsrfToken token) {
         return Map.of("token", token.getToken(), "header", token.getHeaderName());
     }
+
+    @GetMapping("/automation")
+    public Map<String,Object> automation(Principal p) { return engine.workspace(actor(p)); }
+
+    @GetMapping("/automation/runs/{id}")
+    public Map<String,Object> automationRun(Principal p, @PathVariable String id) { return engine.detail(actor(p), id); }
+
+    @PostMapping("/automation/events")
+    public Map<String,Object> signal(Principal p, @RequestBody AutomationEngine.Signal signal) { return engine.ingest(actor(p), signal); }
+
+    public record Scenario(String scenario) {}
+    @PostMapping("/automation/replay")
+    public Map<String,Object> replay(Principal p, @RequestBody Scenario r) { return engine.replay(actor(p), r.scenario()); }
 
     @GetMapping("/me")
     public WorkflowService.Actor me(Principal p) {
