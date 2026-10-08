@@ -49,7 +49,7 @@ public class SecurityConfig {
         var csrf = new HttpSessionCsrfTokenRepository();
         csrf.setHeaderName("X-CSRF-TOKEN");
         http.csrf(c -> c.csrfTokenRepository(csrf))
-                .authorizeHttpRequests(a -> a.requestMatchers("/api/csrf", "/api/login", "/", "/index.html", "/*.js", "/*.css", "/*.svg", "/favicon.ico").permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(a -> a.requestMatchers("/api/prototype/start", "/api/csrf", "/api/login", "/", "/index.html", "/*.js", "/*.css", "/*.svg", "/favicon.ico").permitAll().anyRequest().authenticated())
                 .formLogin(f -> f.loginProcessingUrl("/api/login").successHandler((q, r, a) -> {
             r.setContentType("application/json");
             r.getWriter().write("{\"ok\":true}");

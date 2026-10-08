@@ -23,7 +23,7 @@ public class WorkflowService {
     }
 
     public Actor actor(String email) {
-        var rows = db.queryForList("select * from fg_users where email=? and active=true", email);
+        var rows = db.queryForList("select u.* from fg_users u join fg_tenants t on t.id=u.tenant_id where email=? and active=true and (t.prototype_expires_at is null or t.prototype_expires_at>now())", email);
         if (rows.isEmpty()) {
             throw new ApiException(401, "This account is unavailable.");
         }

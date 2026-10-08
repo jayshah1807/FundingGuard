@@ -10,6 +10,8 @@ FundingGuard is a mortgage payout-control prototype that makes changed instructi
 
 > **Portfolio sandbox, not a banking service.** All records are synthetic. No real money moves, no recipient ownership is verified, and no fraud determination is made. The project does not claim regulatory compliance or production readiness.
 
+**Try without a password:** select **Explore Prototype** for your own synthetic workspace. The account menu switches between five demo roles; existing workflow controls still apply. Sessions last two hours with bounded usage. See [public prototype access and limits](docs/PROTOTYPE.md).
+
 ![FundingGuard operations workspace](docs/assets/workspace.png)
 
 ## The problem

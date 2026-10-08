@@ -351,15 +351,44 @@ export class AppComponent implements OnInit {
     }
   }
   async switchAccount(email: string) {
+    if (this.isPrototype) {
+      if (this.busy) return;
+      this.busy = true;
+      try {
+        this.user = await this.api("/prototype/role", "POST", {role: email.split("@")[0].toUpperCase()});
+        await this.token();
+        this.accountMenu = false;
+        await this.refresh();
+      } catch (e: any) { this.error = e.message; }
+      finally { this.busy = false; }
+      return;
+    }
     await this.logout();
     this.email = email;
     this.loginError = "";
+  }
+  get isPrototype() { return this.user?.tenant?.startsWith("prototype-") === true; }
+  async explorePrototype() {
+    this.busy = true;
+    this.loginError = "";
+    try {
+      await this.token();
+      this.user = await this.api("/prototype/start", "POST");
+      await this.token();
+      this.selectedId = "";
+      this.detail = null;
+      this.modal = "";
+      this.navigate("overview");
+      await this.refresh();
+    } catch (e: any) { this.loginError = e.message; }
+    finally { this.busy = false; }
   }
   async refresh() {
     this.error = "";
     try {
       this.data = await this.api("/workspace");
       this.user = this.data.user;
+      if (this.isPrototype && !this.data.contacts.some((c: any) => c.id === this.form.contactId)) this.form.contactId = this.data.contacts[0]?.id || "";
       if (this.selectedId) await this.loadDetail(this.selectedId);
       if (this.view === "automation") await this.loadAutomation();
     } catch (e: any) {

@@ -49,6 +49,9 @@
         />
       </button>
     </form>
+    <button class="button full" type="button" [disabled]="busy" (click)="explorePrototype()" style="margin-top:12px">
+      Explore Prototype <i-lucide [img]="icons.ArrowRight" [size]="17" />
+    </button>
     <div class="login-note">
       <i-lucide [img]="icons.LockKeyhole" [size]="17" /><span
         >Synthetic data only. Payments and verification are simulated.</span
@@ -76,7 +79,7 @@
     <div class="workspace">
       <span class="workspace-icon">M</span>
       <div>
-        <strong>Maple Demo Lending</strong><small>Mortgage operations</small>
+        <strong>{{isPrototype ? 'Your Prototype' : 'Maple Demo Lending'}}</strong><small>Mortgage operations</small>
       </div>
       <i-lucide [img]="icons.LockKeyhole" [size]="13" />
     </div>
@@ -138,7 +141,7 @@
         >
       </div>
       <div class="top-actions">
-        <span class="environment">SANDBOX</span><span class="top-divider"></span
+        <span class="environment">{{isPrototype ? 'PROTOTYPE · ROLE SIMULATION' : 'SANDBOX'}}</span><span class="top-divider"></span
         ><button
           class="icon-button"
           title="Refresh workspace"
@@ -1025,11 +1028,11 @@
 </div>
 @if(accountMenu){
 <div class="account-popover">
-  <p class="eyebrow">SWITCH DEMO IDENTITY</p>
+  <p class="eyebrow">{{isPrototype ? 'PROTOTYPE ROLE SIMULATION' : 'SWITCH DEMO IDENTITY'}}</p>
   @for(a of accounts;track a.email){<button (click)="switchAccount(a.email)">
     <span class="avatar small">{{a.initials}}</span
     ><span><strong>{{a.name}}</strong><small>{{a.role}}</small></span
-    >@if(user.email===a.email){<i-lucide
+    >@if(user.email===a.email || (isPrototype && user.role===a.email.split('@')[0].toUpperCase())){<i-lucide
       [img]="icons.Check"
       [size]="15"
     />}</button
