@@ -80,7 +80,7 @@ jobs:
           curl -fsS http://127.0.0.1:8088/api/csrf >/dev/null
           cd frontend
           npx playwright test
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: always()
         with:
           name: verification-evidence
