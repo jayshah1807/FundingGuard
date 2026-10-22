@@ -8,6 +8,6 @@
     "preview": "node scripts/preview.mjs"
   },
   "devDependencies": {
-    "@electric-sql/pglite-socket": "0.2.11"
+    "@electric-sql/pglite-socket": "0.2.13"
   }
 }
